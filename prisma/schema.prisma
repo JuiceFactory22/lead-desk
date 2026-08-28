@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Contractor {
+  id             String   @id @default(cuid())
+  name           String
+  company        String?
+  phone          String
+  email          String?
+  niches         String   // comma-separated, e.g. "roofing,gutters"
+  zips           String   // comma-separated zip codes they serve
+  freeLeadsLimit Int      @default(2)
+  active         Boolean  @default(true)
+  notes          String?
+  createdAt      DateTime @default(now())
+  claims         Claim[]
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String
+  email       String?
+  address     String
+  zip         String
+  niche       String
+  jobDetails  String
+  source      String?  // where the lead originally came from
+  priceCents  Int      @default(3500)
+  createdAt   DateTime @default(now())
+  claims      Claim[]
+}
+
+// One row per (lead, contractor) pairing -- this is what lets the
+// same lead be sold to several contractors independently.
+model Claim {
+  id                     String    @id @default(cuid())
+  leadId                 String
+  lead                   Lead      @relation(fields: [leadId], references: [id])
+  contractorId           String
+  contractor             Contractor @relation(fields: [contractorId], references: [id])
+  status                 String    @default("sent") // sent | interested | declined | paid | delivered
+  isFree                 Boolean   @default(false)
+  sentAt                 DateTime  @default(now())
+  interestedAt           DateTime?
+  paidAt                 DateTime?
+  deliveredAt            DateTime? // when the full-info text actually sent (not just when payment cleared)
+  smsSid                 String?   // Twilio message id, for support/debugging
+  sentFromNumber         String?   // which territory number it was sent from
+  deliveryError          String?   // set if the automatic text failed; team needs to send manually
+  squareOrderId          String?
+  squarePaymentId        String?
+
+  @@unique([leadId, contractorId])
+}
+
+model User {
+  id           String @id @default(cuid())
+  email        String @unique
+  passwordHash String
+  name         String?
+}
+
+// A named territory -- niche + set of zips -- with one phone number
+// assigned to it. e.g. "South Florida Roofing": niche "roofing",
+// zips covering South FL, sent from a 305 number. Every lead in that
+// niche + zip range texts contractors from that same number, so
+// contractors come to recognize it.
+model Territory {
+  id        String   @id @default(cuid())
+  name      String   // e.g. "South Florida Roofing"
+  niches    String   // comma-separated, matched against the lead's niche
+  zips      String   // comma-separated zip codes this territory covers
+  phoneNumber String // E.164, e.g. +13055550100
+  isDefault Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  discovered DiscoveredContractor[]
+}
+
+// A candidate contractor found by the Google Places search for a
+// territory. Sits here for the team to approve/reject before it
+// becomes a real Contractor -- keeps junk or duplicate listings from
+// silently starting to receive leads.
+model DiscoveredContractor {
+  id          String   @id @default(cuid())
+  territoryId String
+  territory   Territory @relation(fields: [territoryId], references: [id])
+  placeId     String   // Google Place ID, used to de-dupe across runs
+  name        String
+  phone       String?
+  address     String?
+  status      String   @default("pending") // pending | approved | rejected
+  foundAt     DateTime @default(now())
+
+  @@unique([territoryId, placeId])
+}

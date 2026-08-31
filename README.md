@@ -1,6 +1,7 @@
 # Lead Desk
 
 
+
 Internal tool for turning surplus leads into pay-per-lead revenue. Replaces the
 `leads@` email step: your team enters a lead once, it's automatically matched
 against your contractor list by niche + zip, and each contractor gets their

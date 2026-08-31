@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { searchPlaces, getPlaceDetails } from "./googlePlaces";
+import { searchPlaces } from "./googlePlaces";
 
 // Runs one Places search per (niche, zip) pair in the territory,
 // skips anything already a real Contractor or already sitting in the
@@ -29,23 +29,20 @@ export async function runDiscoveryForTerritory(territoryId: string) {
       const results = await searchPlaces(`${niche} contractors in ${zip}`);
 
       for (const result of results) {
-        if (seenPlaceIds.has(result.place_id)) continue;
-        seenPlaceIds.add(result.place_id); // avoid duplicate work within this same run
-
-        const details = await getPlaceDetails(result.place_id);
-        const phone = details?.formatted_phone_number || null;
+        if (seenPlaceIds.has(result.id)) continue;
+        seenPlaceIds.add(result.id); // avoid duplicate work within this same run
 
         // Already a working contractor under this number -- don't
         // re-surface them as a new candidate.
-        if (phone && existingPhones.has(phone.replace(/\D/g, ""))) continue;
+        if (result.phone && existingPhones.has(result.phone.replace(/\D/g, ""))) continue;
 
         await db.discoveredContractor.create({
           data: {
             territoryId,
-            placeId: result.place_id,
-            name: details?.name || result.name,
-            phone,
-            address: details?.formatted_address || result.formatted_address || null,
+            placeId: result.id,
+            name: result.name,
+            phone: result.phone,
+            address: result.address,
           },
         });
         added++;

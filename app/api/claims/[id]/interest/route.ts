@@ -14,6 +14,12 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   });
   if (!claim) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Already generated a link earlier -- hand back the same one
+  // instead of creating a second Square order for the same claim.
+  if (claim.status === "interested" && claim.squarePaymentLinkUrl) {
+    return NextResponse.json({ free: false, checkoutUrl: claim.squarePaymentLinkUrl });
+  }
+
   const freeUsed = await db.claim.count({
     where: { contractorId: claim.contractorId, isFree: true },
   });
@@ -36,16 +42,11 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ free: true, claim: updated });
   }
 
-  await db.claim.update({
-    where: { id: claim.id },
-    data: { status: "interested", interestedAt: new Date() },
-  });
-
   const { url, orderId } = await createPaymentLinkForClaim(claim, claim.lead.priceCents);
 
   await db.claim.update({
     where: { id: claim.id },
-    data: { squareOrderId: orderId },
+    data: { status: "interested", interestedAt: new Date(), squareOrderId: orderId, squarePaymentLinkUrl: url },
   });
 
   return NextResponse.json({ free: false, checkoutUrl: url });

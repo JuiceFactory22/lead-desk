@@ -56,6 +56,7 @@ model Claim {
   deliveryError          String?   // set if the automatic text failed; team needs to send manually
   squareOrderId          String?
   squarePaymentId        String?
+  squarePaymentLinkUrl   String?
 
   @@unique([leadId, contractorId])
 }

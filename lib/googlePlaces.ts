@@ -1,30 +1,43 @@
+// Places API (New) -- the legacy "Places API" is in maintenance mode,
+// so this targets the current one. Text Search (New) can return the
+// phone number directly via the field mask, so unlike the legacy API
+// there's no separate "Place Details" call needed.
 const KEY = process.env.GOOGLE_PLACES_API_KEY;
+const FIELD_MASK = "places.id,places.displayName,places.formattedAddress,places.internationalPhoneNumber";
 
-type PlaceSearchResult = { place_id: string; name: string; formatted_address?: string };
-type PlaceDetails = { name: string; formatted_phone_number?: string; formatted_address?: string };
+export type PlaceResult = {
+  id: string;
+  name: string;
+  phone: string | null;
+  address: string | null;
+};
 
-// Text Search: "roofing contractors in 33101". Returns up to the
-// first page of results (~20) -- plenty for a periodic top-up search,
-// and keeps the API cost per run predictable.
-export async function searchPlaces(query: string): Promise<PlaceSearchResult[]> {
+// Text Search (New): "roofing contractors in 33101". Returns up to
+// the first page of results (~20) -- plenty for a periodic top-up
+// search, and keeps the API cost per run predictable.
+export async function searchPlaces(query: string): Promise<PlaceResult[]> {
   if (!KEY) throw new Error("GOOGLE_PLACES_API_KEY is not set");
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${KEY}`;
-  const res = await fetch(url);
+
+  const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": KEY,
+      "X-Goog-FieldMask": FIELD_MASK,
+    },
+    body: JSON.stringify({ textQuery: query }),
+  });
+
   const data = await res.json();
-  if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-    throw new Error(`Places search failed: ${data.status} ${data.error_message || ""}`);
+  if (!res.ok) {
+    throw new Error(`Places search failed: ${data.error?.message || res.statusText}`);
   }
-  return data.results || [];
-}
 
-// Text Search doesn't include phone numbers -- a separate Details
-// call per place is required to get formatted_phone_number.
-export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | null> {
-  if (!KEY) throw new Error("GOOGLE_PLACES_API_KEY is not set");
-  const fields = "name,formatted_phone_number,formatted_address";
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (data.status !== "OK") return null;
-  return data.result;
+  const places = data.places || [];
+  return places.map((p: any) => ({
+    id: p.id,
+    name: p.displayName?.text || "Unknown business",
+    phone: p.internationalPhoneNumber || null,
+    address: p.formattedAddress || null,
+  }));
 }

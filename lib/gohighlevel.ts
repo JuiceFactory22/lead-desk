@@ -6,6 +6,8 @@ const LOCATION_ID = process.env.GHL_LOCATION_ID;
 // changes.
 const API_VERSION = "2021-07-28";
 
+console.log("GHL_TOKEN_DEBUG", { length: TOKEN?.length, startsWithPit: TOKEN?.startsWith("pit-"), locationIdLength: LOCATION_ID?.length });
+
 function headers() {
   return {
     Authorization: `Bearer ${TOKEN}`,

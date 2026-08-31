@@ -8,6 +8,7 @@ type Claim = {
   isFree: boolean;
   deliveryError: string | null;
   sentFromNumber: string | null;
+  squarePaymentLinkUrl: string | null;
   contractor: { id: string; name: string; company: string | null; phone: string };
 };
 
@@ -101,12 +102,14 @@ export default function ClaimList({ claims }: { claims: Claim[] }) {
               )}
             </div>
           </div>
-          {linkFor[claim.id] && (
+          {(linkFor[claim.id] || claim.squarePaymentLinkUrl) && (
             <div className="mt-2 text-xs bg-paper border border-line rounded-md px-3 py-2 flex items-center justify-between gap-3">
-              <span className="truncate">{linkFor[claim.id]}</span>
+              <span className="truncate">{linkFor[claim.id] || claim.squarePaymentLinkUrl}</span>
               <button
                 className="text-accent underline shrink-0"
-                onClick={() => navigator.clipboard.writeText(linkFor[claim.id])}
+                onClick={() =>
+                  navigator.clipboard.writeText((linkFor[claim.id] || claim.squarePaymentLinkUrl) as string)
+                }
               >
                 Copy link
               </button>

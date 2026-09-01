@@ -14,7 +14,7 @@ model Contractor {
   phone          String
   email          String?
   niches         String   // comma-separated, e.g. "roofing,gutters"
-  baseZip        String   // home base zip -- coverage is a radius from here
+  baseZip        String   @default("") // home base zip -- coverage is a radius from here
   radiusMiles    Int      @default(25)
   lat            Float?   // geocoded from baseZip when the contractor is added
   lng            Float?

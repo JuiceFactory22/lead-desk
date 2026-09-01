@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { NICHES } from "@/lib/niches";
 
 type Territory = {
   id: string;
@@ -15,11 +16,16 @@ type Territory = {
 export default function TerritoriesManager({ initialTerritories }: { initialTerritories: Territory[] }) {
   const router = useRouter();
   const [territories, setTerritories] = useState(initialTerritories);
-  const [form, setForm] = useState({ name: "", niches: "", zips: "", phoneNumber: "", isDefault: false });
+  const [form, setForm] = useState({ name: "", zips: "", phoneNumber: "", isDefault: false });
+  const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [runningId, setRunningId] = useState<string | null>(null);
   const [discoverResult, setDiscoverResult] = useState<{ id: string; added: number } | null>(null);
+
+  function toggleNiche(n: string) {
+    setSelectedNiches((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]));
+  }
 
   async function runDiscovery(id: string) {
     setRunningId(id);
@@ -37,12 +43,16 @@ export default function TerritoriesManager({ initialTerritories }: { initialTerr
 
   async function addTerritory(e: React.FormEvent) {
     e.preventDefault();
+    if (selectedNiches.length === 0) {
+      setError("Select at least one niche");
+      return;
+    }
     setLoading(true);
     setError("");
     const res = await fetch("/api/territories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, niches: selectedNiches.join(",") }),
     });
     const data = await res.json();
     setLoading(false);
@@ -50,7 +60,8 @@ export default function TerritoriesManager({ initialTerritories }: { initialTerr
       setError(data.error || "Something went wrong");
       return;
     }
-    setForm({ name: "", niches: "", zips: "", phoneNumber: "", isDefault: false });
+    setForm({ name: "", zips: "", phoneNumber: "", isDefault: false });
+    setSelectedNiches([]);
     router.refresh();
     setTerritories((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
   }
@@ -113,7 +124,7 @@ export default function TerritoriesManager({ initialTerritories }: { initialTerr
         ))}
         {territories.length === 0 && (
           <div className="px-5 py-8 text-center text-sm text-muted">
-            No territories yet — delivery will fall back to TWILIO_FROM_NUMBER until you add one.
+            No territories yet — delivery will fall back to GHL_FALLBACK_NUMBER until you add one.
           </div>
         )}
       </div>
@@ -130,27 +141,26 @@ export default function TerritoriesManager({ initialTerritories }: { initialTerr
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="label">Niches (comma-separated)</label>
-            <input
-              className="input"
-              required
-              placeholder="roofing"
-              value={form.niches}
-              onChange={(e) => setForm((f) => ({ ...f, niches: e.target.value }))}
-            />
+        <div>
+          <label className="label">Niches</label>
+          <div className="flex flex-wrap gap-3">
+            {NICHES.map((n) => (
+              <label key={n} className="flex items-center gap-1.5 text-sm">
+                <input type="checkbox" checked={selectedNiches.includes(n)} onChange={() => toggleNiche(n)} />
+                {n}
+              </label>
+            ))}
           </div>
-          <div>
-            <label className="label">Phone number (E.164)</label>
-            <input
-              className="input"
-              required
-              placeholder="+13055550100"
-              value={form.phoneNumber}
-              onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.target.value }))}
-            />
-          </div>
+        </div>
+        <div>
+          <label className="label">Phone number (E.164)</label>
+          <input
+            className="input"
+            required
+            placeholder="+13055550100"
+            value={form.phoneNumber}
+            onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.target.value }))}
+          />
         </div>
         <div>
           <label className="label">Zip codes covered (comma-separated)</label>

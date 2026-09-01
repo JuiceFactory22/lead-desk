@@ -25,7 +25,7 @@ export default async function ContractorDetailPage({ params }: { params: { id: s
   return (
     <div className="max-w-2xl">
       <h1 className="text-xl font-semibold">{contractor.name}{contractor.company ? ` — ${contractor.company}` : ""}</h1>
-      <p className="text-sm text-muted mt-0.5 mb-6">{contractor.phone} · {contractor.niches} · {contractor.zips}</p>
+         <p className="text-sm text-muted mt-0.5 mb-6">{contractor.phone} · {contractor.niches} · within {contractor.radiusMiles}mi of {contractor.baseZip}</p>
 
       <div className="grid grid-cols-3 gap-3 mb-8">
         <div className="card p-4">

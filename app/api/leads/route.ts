@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { matchContractors } from "@/lib/matching";
+import { geocodeZip } from "@/lib/geocode";
 
 export async function GET() {
   const leads = await db.lead.findMany({
@@ -18,6 +19,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
+  const coords = await geocodeZip(zip);
+
   const lead = await db.lead.create({
     data: {
       name,
@@ -25,6 +28,8 @@ export async function POST(req: NextRequest) {
       email: email || null,
       address,
       zip,
+      lat: coords?.lat ?? null,
+      lng: coords?.lng ?? null,
       niche,
       jobDetails,
       source: source || null,
@@ -32,15 +37,12 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Auto-match up to 5 contractors in this niche + zip and create a
-  // "sent" claim for each -- this is the list your team works from
-  // when they send the CallRail text blast.
-  const matches = await matchContractors(niche, zip, 5);
+  const matches = coords ? await matchContractors(niche, coords.lat, coords.lng, 5) : [];
   if (matches.length) {
     await db.claim.createMany({
       data: matches.map((c) => ({ leadId: lead.id, contractorId: c.id })),
     });
   }
 
-  return NextResponse.json({ id: lead.id, matchedCount: matches.length });
+  return NextResponse.json({ id: lead.id, matchedCount: matches.length, geocoded: !!coords });
 }

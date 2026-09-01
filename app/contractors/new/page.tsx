@@ -6,7 +6,7 @@ export default function NewContractorPage() {
   const router = useRouter();
   const [form, setForm] = useState({
     name: "", company: "", phone: "", email: "",
-    niches: "", zips: "", freeLeadsLimit: "2", notes: "",
+    niches: "", baseZip: "", radiusMiles: "25", freeLeadsLimit: "2", notes: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,7 +36,7 @@ export default function NewContractorPage() {
   return (
     <div className="max-w-xl">
       <h1 className="text-xl font-semibold mb-1">Add contractor</h1>
-      <p className="text-sm text-muted mb-6">They'll be matched to any new lead whose niche + zip overlaps.</p>
+      <p className="text-sm text-muted mb-6">They'll be matched to any new lead in the right niche that falls within their service radius.</p>
 
       <form onSubmit={onSubmit} className="card p-6 space-y-4">
         <div className="grid grid-cols-2 gap-4">
@@ -66,9 +66,16 @@ export default function NewContractorPage() {
           <input className="input" required placeholder="roofing, gutters" value={form.niches} onChange={(e) => update("niches", e.target.value)} />
         </div>
 
-        <div>
-          <label className="label">Zip codes served (comma-separated)</label>
-          <input className="input" required placeholder="33101, 33130, 33133" value={form.zips} onChange={(e) => update("zips", e.target.value)} />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">Home base zip code</label>
+            <input className="input" required placeholder="33101" value={form.baseZip} onChange={(e) => update("baseZip", e.target.value)} />
+            <p className="text-xs text-muted mt-1">Where they're based -- coverage is a radius from here, not a hand-picked list of zips.</p>
+          </div>
+          <div>
+            <label className="label">Service radius (miles)</label>
+            <input className="input" type="number" value={form.radiusMiles} onChange={(e) => update("radiusMiles", e.target.value)} />
+          </div>
         </div>
 
         <div>

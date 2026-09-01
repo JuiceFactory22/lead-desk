@@ -25,7 +25,7 @@ export default async function ContractorsPage() {
             <Link key={c.id} href={`/contractors/${c.id}`} className="flex items-center justify-between px-5 py-4 hover:bg-paper/60">
               <div>
                 <div className="text-sm font-medium">{c.name}{c.company ? ` — ${c.company}` : ""}</div>
-                <div className="text-xs text-muted mt-0.5">{c.niches} · {c.zips}</div>
+                <div className="text-xs text-muted mt-0.5">{c.niches} · within {c.radiusMiles}mi of {c.baseZip}</div>
               </div>
               <div className="text-xs text-muted">
                 {free}/{c.freeLeadsLimit} free used · {paid} paid leads

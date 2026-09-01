@@ -12,7 +12,6 @@ export default async function ContractorsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold">Contractors</h1>
-          <p className="text-sm text-muted mt-0.5 mb-6">{contractor.phone} · {contractor.niches} · within {contractor.radiusMiles}mi of {contractor.baseZip}</p>
         </div>
         <Link href="/contractors/new" className="btn-primary">Add contractor</Link>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { NICHES } from "@/lib/niches";
 
 export default function NewLeadPage() {
   const router = useRouter();
@@ -71,13 +72,12 @@ export default function NewLeadPage() {
           </div>
           <div>
             <label className="label">Niche</label>
-            <input
-              className="input"
-              required
-              placeholder="e.g. roofing, gutters, insulation"
-              value={form.niche}
-              onChange={(e) => update("niche", e.target.value)}
-            />
+            <select className="input" required value={form.niche} onChange={(e) => update("niche", e.target.value)}>
+              <option value="">Select a niche…</option>
+              {NICHES.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
           </div>
         </div>
 

@@ -33,13 +33,12 @@ async function upsertContact(name: string, phone: string): Promise<string> {
 
 function buildMessage(lead: { name: string; phone: string; email: string | null; address: string; jobDetails: string; niche: string; zip: string }) {
   return [
-    `Lead unlocked -- ${lead.niche} (${lead.zip})`,
-    lead.name,
-    lead.phone,
-    lead.email || null,
-    lead.address,
-    "",
-    lead.jobDetails,
+    `Lead Unlocked -- ${lead.niche} (${lead.zip})`,
+    `Name: ${lead.name}`,
+    `Phone: ${lead.phone}`,
+    lead.email ? `Email: ${lead.email}` : null,
+    `Address: ${lead.address}`,
+    `Details: ${lead.jobDetails}`,
   ]
     .filter((line) => line !== null)
     .join("\n");

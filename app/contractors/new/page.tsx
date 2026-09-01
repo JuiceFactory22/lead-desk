@@ -1,13 +1,15 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { NICHES } from "@/lib/niches";
 
 export default function NewContractorPage() {
   const router = useRouter();
   const [form, setForm] = useState({
     name: "", company: "", phone: "", email: "",
-    niches: "", baseZip: "", radiusMiles: "25", freeLeadsLimit: "2", notes: "",
+    baseZip: "", radiusMiles: "25", freeLeadsLimit: "2", notes: "",
   });
+  const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -15,14 +17,22 @@ export default function NewContractorPage() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function toggleNiche(n: string) {
+    setSelectedNiches((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]));
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (selectedNiches.length === 0) {
+      setError("Select at least one niche");
+      return;
+    }
     setLoading(true);
     setError("");
     const res = await fetch("/api/contractors", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, niches: selectedNiches.join(",") }),
     });
     const data = await res.json();
     setLoading(false);
@@ -62,8 +72,15 @@ export default function NewContractorPage() {
         </div>
 
         <div>
-          <label className="label">Niches (comma-separated)</label>
-          <input className="input" required placeholder="roofing, gutters" value={form.niches} onChange={(e) => update("niches", e.target.value)} />
+          <label className="label">Niches</label>
+          <div className="flex flex-wrap gap-3">
+            {NICHES.map((n) => (
+              <label key={n} className="flex items-center gap-1.5 text-sm">
+                <input type="checkbox" checked={selectedNiches.includes(n)} onChange={() => toggleNiche(n)} />
+                {n}
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

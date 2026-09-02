@@ -24,8 +24,6 @@ async function upsertContact(name: string, phone: string): Promise<string> {
 
 type LeadInfo = { name: string; phone: string; email: string | null; address: string; jobType: string | null; jobDetails: string; niche: string; zip: string };
 
-// Full lead info -- used once a free lead is confirmed via reply, or
-// once a real payment clears.
 function buildFullMessage(lead: LeadInfo) {
   return [
     `Lead Unlocked -- ${lead.niche} (${lead.zip})`,
@@ -40,9 +38,6 @@ function buildFullMessage(lead: LeadInfo) {
     .join("\n");
 }
 
-// Redacted teaser for a contractor who still has free leads --
-// trains them on the "reply YES" pattern before any money is
-// involved, and uses one of their free leads only if they reply.
 function buildFreeTeaser(lead: { niche: string; zip: string; jobType: string | null; jobDetails: string }, freeRemaining: number) {
   return [
     `New ${lead.niche} lead in ${lead.zip}${lead.jobType ? ` -- ${lead.jobType}` : ""}, matching your service area.`,
@@ -52,8 +47,6 @@ function buildFreeTeaser(lead: { niche: string; zip: string; jobType: string | n
   ].join("\n");
 }
 
-// Redacted teaser + payment link for a contractor whose free leads
-// are used up -- one message, no separate opt-in round-trip.
 function buildPaymentPrompt(lead: { niche: string; zip: string; jobType: string | null; jobDetails: string }, paymentUrl: string) {
   return [
     `New ${lead.niche} lead in ${lead.zip}${lead.jobType ? ` -- ${lead.jobType}` : ""}, matching your service area.`,

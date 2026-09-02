@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { geocodeZip } from "@/lib/geocode";
 import { backfillContractorIntoRecentLeads } from "@/lib/matching";
+import { triggerClaimOutreach } from "@/lib/outreach";
 
 export async function GET() {
   const contractors = await db.contractor.findMany({
@@ -40,7 +41,10 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const backfilled = await backfillContractorIntoRecentLeads(contractor);
+  const backfilledClaimIds = await backfillContractorIntoRecentLeads(contractor);
+  for (const claimId of backfilledClaimIds) {
+    await triggerClaimOutreach(claimId);
+  }
 
-  return NextResponse.json({ ...contractor, backfilledLeadCount: backfilled });
+  return NextResponse.json({ ...contractor, backfilledLeadCount: backfilledClaimIds.length });
 }

@@ -11,14 +11,16 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
   if (!lead) notFound();
 
   const firstName = lead.name.split(" ")[0];
-  const teaserText = `New ${lead.niche} lead near ${lead.zip}.\n${lead.jobDetails}\nInterested? Reply YES and I'll send the full details.`;
-  const fullText = `${lead.name}\n${lead.phone}${lead.email ? `\n${lead.email}` : ""}\n${lead.address}\n\n${lead.jobDetails}`;
+  const niceType = lead.jobType ? `${lead.jobType} — ` : "";
+  const teaserText = `New ${lead.niche} lead near ${lead.zip}.\n${niceType}${lead.jobDetails}\nInterested? Reply YES and I'll send the full details.`;
+  const fullText = `${lead.name}\n${lead.phone}${lead.email ? `\n${lead.email}` : ""}\n${lead.address}\n\n${niceType}${lead.jobDetails}`;
 
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
         <h1 className="text-xl font-semibold">
           {lead.niche} — {lead.zip}
+          {lead.jobType && <span className="text-muted font-normal"> · {lead.jobType}</span>}
         </h1>
         <p className="text-sm text-muted mt-0.5">
           ${(lead.priceCents / 100).toFixed(0)} per contractor · added {new Date(lead.createdAt).toLocaleDateString()}

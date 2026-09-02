@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { matchContractors } from "@/lib/matching";
 import { geocodeZip } from "@/lib/geocode";
 import { triggerClaimOutreach } from "@/lib/outreach";
+import { getPriceForLead } from "@/lib/pricing";
 
 export async function GET() {
   const leads = await db.lead.findMany({
@@ -22,6 +23,12 @@ export async function POST(req: NextRequest) {
 
   const coords = await geocodeZip(zip);
 
+  let finalPriceCents = priceCents ? Number(priceCents) : null;
+  if (!finalPriceCents) {
+    finalPriceCents = await getPriceForLead(niche, jobType || null, zip);
+  }
+  if (!finalPriceCents) finalPriceCents = 3500;
+
   const lead = await db.lead.create({
     data: {
       name,
@@ -35,7 +42,7 @@ export async function POST(req: NextRequest) {
       jobType: jobType || null,
       jobDetails,
       source: source || null,
-      priceCents: priceCents ? Number(priceCents) : 3500,
+      priceCents: finalPriceCents,
     },
   });
 
@@ -52,5 +59,5 @@ export async function POST(req: NextRequest) {
     await triggerClaimOutreach(claimId);
   }
 
-  return NextResponse.json({ id: lead.id, matchedCount: matches.length, geocoded: !!coords });
+  return NextResponse.json({ id: lead.id, matchedCount: matches.length, geocoded: !!coords, priceCents: finalPriceCents });
 }

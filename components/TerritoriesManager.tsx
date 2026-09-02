@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { NICHES } from "@/lib/niches";
+import { useCategories } from "@/lib/useCategories";
 
 type Territory = {
   id: string;
@@ -20,6 +20,7 @@ export default function TerritoriesManager({ initialTerritories }: { initialTerr
   const [error, setError] = useState("");
   const [runningId, setRunningId] = useState<string | null>(null);
   const [discoverResult, setDiscoverResult] = useState<{ id: string; added: number } | null>(null);
+  const { niches } = useCategories();
 
   function toggleNiche(n: string) {
     setSelectedNiches((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]));
@@ -89,63 +90,4 @@ export default function TerritoriesManager({ initialTerritories }: { initialTerr
               <button className="btn-secondary py-1 px-2" disabled={runningId === t.id} onClick={() => runDiscovery(t.id)}>
                 {runningId === t.id ? "Searching..." : "Run discovery"}
               </button>
-              <button className="text-muted hover:text-ink px-2" onClick={() => toggleActive(t.id, t.active)}>
-                {t.active ? "Deactivate" : "Activate"}
-              </button>
-            </div>
-          </div>
-          {discoverResult?.id === t.id && (
-            <div className="mt-2 text-xs text-muted">
-              Found {discoverResult.added} new candidate{discoverResult.added === 1 ? "" : "s"} —{" "}
-              <a href="/discovered" className="text-accent underline">review them</a>.
-            </div>
-          )}
-          </div>
-        ))}
-        {territories.length === 0 && (
-          <div className="px-5 py-8 text-center text-sm text-muted">No search areas yet.</div>
-        )}
-      </div>
-
-      <form onSubmit={addTerritory} className="card p-5 space-y-3">
-        <div className="text-sm font-medium">Add a search area</div>
-        <div>
-          <label className="label">Name</label>
-          <input
-            className="input"
-            required
-            placeholder="South Florida Roofing"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          />
-          <p className="text-xs text-muted mt-1">Just a label for your own reference — doesn't affect matching or delivery.</p>
-        </div>
-        <div>
-          <label className="label">Niches</label>
-          <div className="flex flex-wrap gap-3">
-            {NICHES.map((n) => (
-              <label key={n} className="flex items-center gap-1.5 text-sm">
-                <input type="checkbox" checked={selectedNiches.includes(n)} onChange={() => toggleNiche(n)} />
-                {n}
-              </label>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className="label">Zip codes to search (comma-separated)</label>
-          <input
-            className="input"
-            required
-            placeholder="33101, 33130, 33133"
-            value={form.zips}
-            onChange={(e) => setForm((f) => ({ ...f, zips: e.target.value }))}
-          />
-        </div>
-        {error && <p className="text-sm text-warn">{error}</p>}
-        <button className="btn-primary" disabled={loading}>
-          {loading ? "Adding..." : "Add search area"}
-        </button>
-      </form>
-    </div>
-  );
-}
+              <button className="text-muted hover:text-ink px-2" onClick={() => toggleActive(t.id,

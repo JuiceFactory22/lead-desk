@@ -3,8 +3,6 @@ import { db } from "@/lib/db";
 import { deliverClaim } from "@/lib/deliver";
 import { getClaimIdForOrder, verifySquareSignature } from "@/lib/square";
 
-// Square requires the raw body + the exact notification URL to verify
-// the signature, so this reads text() instead of json().
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   const signature = req.headers.get("x-square-hmacsha256-signature") || "";
@@ -22,11 +20,21 @@ export async function POST(req: NextRequest) {
     if (payment?.status === "COMPLETED" && payment.order_id) {
       const claimId = await getClaimIdForOrder(payment.order_id);
       if (claimId) {
-        await db.claim.update({
-          where: { id: claimId },
+        // Square sends this same "payment completed" event several
+        // times within seconds of each other, by design, for
+        // reliability. This update is atomic: only the call that
+        // actually succeeds in moving the claim off its pre-payment
+        // status proceeds to trigger delivery -- every other
+        // concurrent duplicate call sees count 0 and stops right
+        // here, instead of resetting the status and re-triggering a
+        // second text.
+        const claimed = await db.claim.updateMany({
+          where: { id: claimId, status: { notIn: ["paid", "delivered"] } },
           data: { status: "paid", paidAt: new Date(), squarePaymentId: payment.id },
         });
-        await deliverClaim(claimId);
+        if (claimed.count > 0) {
+          await deliverClaim(claimId);
+        }
       }
     }
   }

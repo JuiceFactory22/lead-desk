@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { NICHES, JOB_TYPES } from "@/lib/niches";
+import { useCategories } from "@/lib/useCategories";
 
 type PricingRule = {
   id: string;
@@ -21,7 +21,8 @@ export default function PricingManager({ initialRules }: { initialRules: Pricing
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ created: number; updated: number } | null>(null);
 
-  const jobTypeOptions = JOB_TYPES[form.niche] || [];
+  const { niches, jobTypesByNiche } = useCategories();
+  const jobTypeOptions = jobTypesByNiche[form.niche] || [];
 
   async function addRule(e: React.FormEvent) {
     e.preventDefault();
@@ -147,7 +148,7 @@ export default function PricingManager({ initialRules }: { initialRules: Pricing
               onChange={(e) => setForm((f) => ({ ...f, niche: e.target.value, jobType: "" }))}
             >
               <option value="">Select a niche…</option>
-              {NICHES.map((n) => (
+              {niches.map((n) => (
                 <option key={n} value={n}>{n}</option>
               ))}
             </select>

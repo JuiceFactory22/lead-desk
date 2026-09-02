@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { NICHES } from "@/lib/niches";
+import { useCategories } from "@/lib/useCategories";
 
 export default function NewContractorPage() {
   const router = useRouter();
@@ -10,6 +10,7 @@ export default function NewContractorPage() {
     baseZip: "", radiusMiles: "25", freeLeadsLimit: "2", notes: "",
   });
   const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
+  const { niches } = useCategories();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [backfilled, setBackfilled] = useState<number | null>(null);
@@ -80,7 +81,7 @@ export default function NewContractorPage() {
         <div>
           <label className="label">Niches</label>
           <div className="flex flex-wrap gap-3">
-            {NICHES.map((n) => (
+            {niches.map((n) => (
               <label key={n} className="flex items-center gap-1.5 text-sm">
                 <input type="checkbox" checked={selectedNiches.includes(n)} onChange={() => toggleNiche(n)} />
                 {n}
@@ -110,17 +111,3 @@ export default function NewContractorPage() {
           <label className="label">Notes</label>
           <textarea className="input min-h-16" value={form.notes} onChange={(e) => update("notes", e.target.value)} />
         </div>
-
-        {error && <p className="text-sm text-warn">{error}</p>}
-        {backfilled !== null && (
-          <p className="text-sm text-accentDark">
-            Also matched to {backfilled} lead{backfilled === 1 ? "" : "s"} from the last 24 hours. Redirecting…
-          </p>
-        )}
-        <button className="btn-primary w-full" disabled={loading}>
-          {loading ? "Saving..." : "Add contractor"}
-        </button>
-      </form>
-    </div>
-  );
-}

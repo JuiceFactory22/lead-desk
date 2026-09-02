@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { geocodeZip } from "@/lib/geocode";
+import { backfillContractorIntoRecentLeads } from "@/lib/matching";
 
 export async function GET() {
   const contractors = await db.contractor.findMany({
@@ -39,5 +40,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json(contractor);
+  const backfilled = await backfillContractorIntoRecentLeads(contractor);
+
+  return NextResponse.json({ ...contractor, backfilledLeadCount: backfilled });
 }

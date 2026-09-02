@@ -21,7 +21,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <Link href="/" className="font-semibold tracking-tight text-ink">Lead Desk</Link>
                 <Link href="/" className="text-muted hover:text-ink">Leads</Link>
                 <Link href="/contractors" className="text-muted hover:text-ink">Contractors</Link>
-                <Link href="/territories" className="text-muted hover:text-ink">Territories</Link>
+                <Link href="/territories" className="text-muted hover:text-ink">Search areas</Link>
                 <Link href="/discovered" className="text-muted hover:text-ink">Discovered</Link>
                 <Link href="/leads/new" className="text-muted hover:text-ink">New lead</Link>
               </nav>

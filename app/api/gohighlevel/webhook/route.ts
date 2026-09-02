@@ -9,15 +9,14 @@ function normalizePhone(phone: string): string {
 
 export async function POST(req: NextRequest) {
   const event = await req.json();
-  console.log("GHL_WEBHOOK_DEBUG", JSON.stringify(event));
 
-  const rawBody: string = event.body ?? event.customData?.body ?? event.message ?? "";
-  const rawPhone: string = event.phone ?? event.customData?.phone ?? "";
+  const rawBody: string = event.message?.body ?? event.customData?.Body ?? event.customData?.body ?? event.body ?? "";
+  const rawPhone: string = event.phone ?? event.customData?.Phone ?? event.customData?.phone ?? "";
 
   const body = String(rawBody).trim().toLowerCase();
   const looksLikeYes = body === "yes" || body === "y" || body.startsWith("yes");
   if (!looksLikeYes) {
-    return NextResponse.json({ ok: true, skipped: "not a yes", received: { rawBody, rawPhone } });
+    return NextResponse.json({ ok: true, skipped: "not a yes" });
   }
 
   const fromPhone = normalizePhone(String(rawPhone));

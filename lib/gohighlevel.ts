@@ -22,7 +22,9 @@ async function upsertContact(name: string, phone: string): Promise<string> {
   return data.contact.id as string;
 }
 
-function buildMessage(lead: { name: string; phone: string; email: string | null; address: string; jobType: string | null; jobDetails: string; niche: string; zip: string }) {
+type LeadInfo = { name: string; phone: string; email: string | null; address: string; jobType: string | null; jobDetails: string; niche: string; zip: string };
+
+function buildFullMessage(lead: LeadInfo) {
   return [
     `Lead Unlocked -- ${lead.niche} (${lead.zip})`,
     lead.jobType ? `Type: ${lead.jobType}` : null,
@@ -36,24 +38,18 @@ function buildMessage(lead: { name: string; phone: string; email: string | null;
     .join("\n");
 }
 
-export async function sendLeadInfoViaGHL(
-  contractor: { name: string; phone: string },
-  lead: { name: string; phone: string; email: string | null; address: string; jobType: string | null; jobDetails: string; niche: string; zip: string },
-  fromNumber: string
-): Promise<{ messageId: string }> {
-  const contactId = await upsertContact(contractor.name, contractor.phone);
-
-  const res = await fetch(`${BASE_URL}/conversations/messages`, {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify({
-      type: "SMS",
-      contactId,
-      message: buildMessage(lead),
-      fromNumber,
-    }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`GHL send message failed: ${JSON.stringify(data)}`);
-  return { messageId: data.messageId || data.id || "sent" };
+function buildFreeTeaser(lead: { niche: string; zip: string; jobType: string | null; jobDetails: string }, freeRemaining: number) {
+  return [
+    `New ${lead.niche} lead in ${lead.zip}${lead.jobType ? ` -- ${lead.jobType}` : ""}, matching your service area.`,
+    lead.jobDetails,
+    "",
+    `You have ${freeRemaining} free lead${freeRemaining === 1 ? "" : "s"} left. Reply YES to get the full details.`,
+  ].join("\n");
 }
+
+function buildPaymentPrompt(lead: { niche: string; zip: string; jobType: string | null; jobDetails: string }, paymentUrl: string) {
+  return [
+    `New ${lead.niche} lead in ${lead.zip}${lead.jobType ? ` -- ${lead.jobType}` : ""}, matching your service area.`,
+    lead.jobDetails,
+    "",
+    `Unlock the

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { NICHES, JOB_TYPES } from "@/lib/niches";
+import { useCategories } from "@/lib/useCategories";
 
 export default function NewLeadPage() {
   const router = useRouter();
@@ -22,7 +22,8 @@ export default function NewLeadPage() {
     setForm((f) => ({ ...f, niche: value, jobType: "" }));
   }
 
-  const jobTypeOptions = JOB_TYPES[form.niche] || [];
+  const { niches, jobTypesByNiche } = useCategories();
+  const jobTypeOptions = jobTypesByNiche[form.niche] || [];
 
   useEffect(() => {
     if (!form.niche || !form.zip) {
@@ -96,7 +97,7 @@ export default function NewLeadPage() {
             <label className="label">Niche</label>
             <select className="input" required value={form.niche} onChange={(e) => updateNiche(e.target.value)}>
               <option value="">Select a niche…</option>
-              {NICHES.map((n) => (
+              {niches.map((n) => (
                 <option key={n} value={n}>{n}</option>
               ))}
             </select>

@@ -37,7 +37,6 @@ model Lead {
   niche       String
   jobType     String?  // e.g. "Inspection", "Repair" -- niche-specific, optional
   jobDetails  String
-  jobDetails  String
   source      String?  // where the lead originally came from
   priceCents  Int      @default(3500)
   createdAt   DateTime @default(now())

@@ -73,19 +73,13 @@ model User {
   name         String?
 }
 
-// A named territory -- niche + set of zips -- with one phone number
-// assigned to it. e.g. "South Florida Roofing": niche "roofing",
-// zips covering South FL, sent from a 305 number. Every lead in that
-// niche + zip range texts contractors from that same number, so
-// contractors come to recognize it.
-model Territory {
-  // A search area for Discovery only -- niche + set of zips that Places
-// search runs against. No longer used for picking a sending number;
-// delivery always uses one single number (see GHL_SENDING_NUMBER),
-// since CallRail's local-number outreach already does the job of
-// getting a good response rate up front.
-model Territory {
-  id        String   @id @default(cuid())
+   // A search area for Discovery only -- niche + set of zips that Places
+   // search runs against. No longer used for picking a sending number;
+   // delivery always uses one single number (see GHL_SENDING_NUMBER),
+   // since CallRail's local-number outreach already does the job of
+   // getting a good response rate up front.
+   model Territory {
+     id        String   @id @default(cuid())
   name      String   // just a friendly label, e.g. "South Florida Roofing"
   niches    String   // comma-separated, matched against the lead's niche
   zips      String   // comma-separated zip codes this search area covers

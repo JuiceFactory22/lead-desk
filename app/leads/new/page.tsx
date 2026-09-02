@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { NICHES, JOB_TYPES } from "@/lib/niches";
 
@@ -7,8 +7,9 @@ export default function NewLeadPage() {
   const router = useRouter();
   const [form, setForm] = useState({
     name: "", phone: "", email: "", address: "", zip: "",
-    niche: "", jobType: "", jobDetails: "", source: "", priceCents: "3500",
+    niche: "", jobType: "", jobDetails: "", source: "", priceCents: "",
   });
+  const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ matchedCount: number } | null>(null);
   const [error, setError] = useState("");
@@ -22,6 +23,21 @@ export default function NewLeadPage() {
   }
 
   const jobTypeOptions = JOB_TYPES[form.niche] || [];
+
+  useEffect(() => {
+    if (!form.niche || !form.zip) {
+      setSuggestedPrice(null);
+      return;
+    }
+    const controller = new AbortController();
+    const params = new URLSearchParams({ niche: form.niche, zip: form.zip });
+    if (form.jobType) params.set("jobType", form.jobType);
+    fetch(`/api/pricing/lookup?${params.toString()}`, { signal: controller.signal })
+      .then((r) => r.json())
+      .then((data) => setSuggestedPrice(data.priceCents ?? null))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [form.niche, form.jobType, form.zip]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -119,9 +135,20 @@ export default function NewLeadPage() {
             <input
               className="input"
               type="number"
-              value={Number(form.priceCents) / 100}
-              onChange={(e) => update("priceCents", String(Math.round(Number(e.target.value) * 100)))}
+              placeholder={suggestedPrice != null ? String(suggestedPrice / 100) : "35"}
+              value={form.priceCents ? String(Number(form.priceCents) / 100) : ""}
+              onChange={(e) => update("priceCents", e.target.value ? String(Math.round(Number(e.target.value) * 100)) : "")}
             />
+            {suggestedPrice != null && !form.priceCents && (
+              <p className="text-xs text-muted mt-1">
+                Using your configured price: ${(suggestedPrice / 100).toFixed(0)}
+              </p>
+            )}
+            {suggestedPrice == null && form.niche && form.zip && !form.priceCents && (
+              <p className="text-xs text-muted mt-1">
+                No pricing rule matches yet — will default to $35. Set one up on the Pricing page.
+              </p>
+            )}
           </div>
         </div>
 

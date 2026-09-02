@@ -32,16 +32,27 @@ export default function ClaimList({ claims }: { claims: Claim[] }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [linkFor, setLinkFor] = useState<Record<string, string>>({});
+  const [errorFor, setErrorFor] = useState<Record<string, string>>({});
 
   async function markInterested(claimId: string) {
     setBusyId(claimId);
-    const res = await fetch(`/api/claims/${claimId}/interest`, { method: "POST" });
-    const data = await res.json();
-    setBusyId(null);
-    if (data.checkoutUrl) {
-      setLinkFor((prev) => ({ ...prev, [claimId]: data.checkoutUrl }));
+    setErrorFor((prev) => ({ ...prev, [claimId]: "" }));
+    try {
+      const res = await fetch(`/api/claims/${claimId}/interest`, { method: "POST" });
+      const data = await res.json();
+      setBusyId(null);
+      if (!res.ok) {
+        setErrorFor((prev) => ({ ...prev, [claimId]: data.error || "Something went wrong" }));
+        return;
+      }
+      if (data.checkoutUrl) {
+        setLinkFor((prev) => ({ ...prev, [claimId]: data.checkoutUrl }));
+      }
+      router.refresh();
+    } catch {
+      setBusyId(null);
+      setErrorFor((prev) => ({ ...prev, [claimId]: "Network error -- try again" }));
     }
-    router.refresh();
   }
 
   async function decline(claimId: string) {
@@ -89,7 +100,7 @@ export default function ClaimList({ claims }: { claims: Claim[] }) {
                     disabled={busyId === claim.id}
                     onClick={() => markInterested(claim.id)}
                   >
-                    Mark interested
+                    {busyId === claim.id ? "Working..." : "Mark interested"}
                   </button>
                   <button
                     className="text-xs text-muted hover:text-warn px-2"
@@ -102,6 +113,11 @@ export default function ClaimList({ claims }: { claims: Claim[] }) {
               )}
             </div>
           </div>
+          {errorFor[claim.id] && (
+            <div className="mt-2 text-xs bg-red-50 border border-red-200 text-red-800 rounded-md px-3 py-2">
+              {errorFor[claim.id]}
+            </div>
+          )}
           {(linkFor[claim.id] || claim.squarePaymentLinkUrl) && (
             <div className="mt-2 text-xs bg-paper border border-line rounded-md px-3 py-2 flex items-center justify-between gap-3">
               <span className="truncate">{linkFor[claim.id] || claim.squarePaymentLinkUrl}</span>

@@ -9,6 +9,7 @@ function normalizePhone(phone: string): string {
 
 export async function POST(req: NextRequest) {
   const event = await req.json();
+  console.log("GHL_WEBHOOK_DEBUG", JSON.stringify(event));
 
   const rawBody: string = event.body ?? event.customData?.body ?? event.message ?? "";
   const rawPhone: string = event.phone ?? event.customData?.phone ?? "";

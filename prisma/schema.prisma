@@ -35,6 +35,8 @@ model Lead {
   lat         Float?   // geocoded from zip at intake, used for radius matching
   lng         Float?
   niche       String
+  jobType     String?  // e.g. "Inspection", "Repair" -- niche-specific, optional
+  jobDetails  String
   jobDetails  String
   source      String?  // where the lead originally came from
   priceCents  Int      @default(3500)

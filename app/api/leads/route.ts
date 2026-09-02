@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { matchContractors } from "@/lib/matching";
 import { geocodeZip } from "@/lib/geocode";
+import { triggerClaimOutreach } from "@/lib/outreach";
 
 export async function GET() {
   const leads = await db.lead.findMany({
@@ -39,10 +40,16 @@ export async function POST(req: NextRequest) {
   });
 
   const matches = coords ? await matchContractors(niche, coords.lat, coords.lng, 5) : [];
+  let claimIds: string[] = [];
   if (matches.length) {
-    await db.claim.createMany({
-      data: matches.map((c) => ({ leadId: lead.id, contractorId: c.id })),
-    });
+    const created = await Promise.all(
+      matches.map((c) => db.claim.create({ data: { leadId: lead.id, contractorId: c.id } }))
+    );
+    claimIds = created.map((c) => c.id);
+  }
+
+  for (const claimId of claimIds) {
+    await triggerClaimOutreach(claimId);
   }
 
   return NextResponse.json({ id: lead.id, matchedCount: matches.length, geocoded: !!coords });

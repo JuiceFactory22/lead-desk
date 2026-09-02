@@ -111,3 +111,17 @@ export default function NewContractorPage() {
           <label className="label">Notes</label>
           <textarea className="input min-h-16" value={form.notes} onChange={(e) => update("notes", e.target.value)} />
         </div>
+
+        {error && <p className="text-sm text-warn">{error}</p>}
+        {backfilled !== null && (
+          <p className="text-sm text-accentDark">
+            Also matched to {backfilled} lead{backfilled === 1 ? "" : "s"} from the last 24 hours. Redirecting…
+          </p>
+        )}
+        <button className="btn-primary w-full" disabled={loading}>
+          {loading ? "Saving..." : "Add contractor"}
+        </button>
+      </form>
+    </div>
+  );
+}

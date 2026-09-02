@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: "no phone number" });
   }
 
-  const contractors = await db.contractor.findMany();
+  const contractors = await db.contractor.findMany({ orderBy: { createdAt: "desc" } });
   const contractor = contractors.find((c) => normalizePhone(c.phone) === fromPhone);
   if (!contractor) {
     return NextResponse.json({ ok: true, skipped: "no matching contractor" });

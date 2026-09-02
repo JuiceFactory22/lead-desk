@@ -83,7 +83,7 @@ model User {
      id        String   @id @default(cuid())
   name      String   // just a friendly label, e.g. "South Florida Roofing"
   niches    String   // comma-separated, matched against the lead's niche
-  zips      String   // comma-separated zip codes this search area covers
+  zips       String?  // null = applies everywhere (a default); set = an area override
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   discovered DiscoveredContractor[]

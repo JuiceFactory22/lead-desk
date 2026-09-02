@@ -10,19 +10,18 @@ function normalizePhone(phone: string): string {
 export async function POST(req: NextRequest) {
   const event = await req.json();
 
-  if (event.messageType !== "SMS" || event.direction !== "inbound") {
-    return NextResponse.json({ ok: true, skipped: "not an inbound SMS" });
-  }
+  const rawBody: string = event.body ?? event.customData?.body ?? event.message ?? "";
+  const rawPhone: string = event.phone ?? event.customData?.phone ?? "";
 
-  const body: string = (event.body || "").trim().toLowerCase();
+  const body = String(rawBody).trim().toLowerCase();
   const looksLikeYes = body === "yes" || body === "y" || body.startsWith("yes");
   if (!looksLikeYes) {
-    return NextResponse.json({ ok: true, skipped: "not a yes" });
+    return NextResponse.json({ ok: true, skipped: "not a yes", received: { rawBody, rawPhone } });
   }
 
-  const fromPhone = normalizePhone(event.from || "");
+  const fromPhone = normalizePhone(String(rawPhone));
   if (!fromPhone) {
-    return NextResponse.json({ ok: true, skipped: "no from number" });
+    return NextResponse.json({ ok: true, skipped: "no phone number" });
   }
 
   const contractors = await db.contractor.findMany();

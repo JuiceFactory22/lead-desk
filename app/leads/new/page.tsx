@@ -1,13 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { NICHES } from "@/lib/niches";
+import { NICHES, JOB_TYPES } from "@/lib/niches";
 
 export default function NewLeadPage() {
   const router = useRouter();
   const [form, setForm] = useState({
     name: "", phone: "", email: "", address: "", zip: "",
-    niche: "", jobDetails: "", source: "", priceCents: "3500",
+    niche: "", jobType: "", jobDetails: "", source: "", priceCents: "3500",
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ matchedCount: number } | null>(null);
@@ -16,6 +16,12 @@ export default function NewLeadPage() {
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
   }
+
+  function updateNiche(value: string) {
+    setForm((f) => ({ ...f, niche: value, jobType: "" }));
+  }
+
+  const jobTypeOptions = JOB_TYPES[form.niche] || [];
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -72,7 +78,7 @@ export default function NewLeadPage() {
           </div>
           <div>
             <label className="label">Niche</label>
-            <select className="input" required value={form.niche} onChange={(e) => update("niche", e.target.value)}>
+            <select className="input" required value={form.niche} onChange={(e) => updateNiche(e.target.value)}>
               <option value="">Select a niche…</option>
               {NICHES.map((n) => (
                 <option key={n} value={n}>{n}</option>
@@ -80,6 +86,18 @@ export default function NewLeadPage() {
             </select>
           </div>
         </div>
+
+        {jobTypeOptions.length > 0 && (
+          <div>
+            <label className="label">Job type</label>
+            <select className="input" required value={form.jobType} onChange={(e) => update("jobType", e.target.value)}>
+              <option value="">Select a job type…</option>
+              {jobTypeOptions.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="label">Job details</label>

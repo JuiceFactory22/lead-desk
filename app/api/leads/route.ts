@@ -13,7 +13,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, phone, email, address, zip, niche, jobDetails, source, priceCents } = body;
+  const { name, phone, email, address, zip, niche, jobType, jobDetails, source, priceCents } = body;
 
   if (!name || !phone || !address || !zip || !niche || !jobDetails) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
       lat: coords?.lat ?? null,
       lng: coords?.lng ?? null,
       niche,
+      jobType: jobType || null,
       jobDetails,
       source: source || null,
       priceCents: priceCents ? Number(priceCents) : 3500,

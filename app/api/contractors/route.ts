@@ -41,9 +41,12 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const backfilledClaimIds = await backfillContractorIntoRecentLeads(contractor);
-  for (const claimId of backfilledClaimIds) {
-    await triggerClaimOutreach(claimId);
+    const backfilledClaimIds = await backfillContractorIntoRecentLeads(contractor);
+  // Only text about the single most recent match (the list is
+  // newest-first) -- the rest still show up on their lead pages for
+  // the team to notice, just without a separate text for each.
+  if (backfilledClaimIds.length > 0) {
+    await triggerClaimOutreach(backfilledClaimIds[0]);
   }
 
   return NextResponse.json({ ...contractor, backfilledLeadCount: backfilledClaimIds.length });

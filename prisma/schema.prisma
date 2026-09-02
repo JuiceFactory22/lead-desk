@@ -79,17 +79,20 @@ model User {
 // niche + zip range texts contractors from that same number, so
 // contractors come to recognize it.
 model Territory {
+  // A search area for Discovery only -- niche + set of zips that Places
+// search runs against. No longer used for picking a sending number;
+// delivery always uses one single number (see GHL_SENDING_NUMBER),
+// since CallRail's local-number outreach already does the job of
+// getting a good response rate up front.
+model Territory {
   id        String   @id @default(cuid())
-  name      String   // e.g. "South Florida Roofing"
+  name      String   // just a friendly label, e.g. "South Florida Roofing"
   niches    String   // comma-separated, matched against the lead's niche
-  zips      String   // comma-separated zip codes this territory covers
-  phoneNumber String // E.164, e.g. +13055550100
-  isDefault Boolean  @default(false)
+  zips      String   // comma-separated zip codes this search area covers
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   discovered DiscoveredContractor[]
 }
-
 // A candidate contractor found by the Google Places search for a
 // territory. Sits here for the team to approve/reject before it
 // becomes a real Contractor -- keeps junk or duplicate listings from

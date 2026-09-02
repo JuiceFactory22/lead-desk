@@ -2,16 +2,8 @@ import { db } from "./db";
 import { milesBetween } from "./geocode";
 
 const MAX_CONTRACTORS_PER_LEAD = 5;
-// How fresh a lead has to be to still get offered to a contractor
-// added after the fact. Adjust if 24 hours feels too short or long.
 const BACKFILL_WINDOW_HOURS = 24;
 
-// Finds active contractors in the right niche whose service radius
-// actually reaches the lead's location, closest first, capped to
-// `limit` (default 5 per your rule of sending each lead to 3-5
-// contractors). Distance-based instead of a maintained zip list --
-// a contractor just needs a home zip + radius, not every zip they
-// cover.
 export async function matchContractors(
   niche: string,
   leadLat: number | null,
@@ -40,18 +32,14 @@ export async function matchContractors(
   return inRange.slice(0, limit).map((r) => r.contractor);
 }
 
-// Run when a contractor is newly added: catches them up on any
-// still-fresh leads (last 24h) in their niche + radius that don't
-// already have a full set of contractors, so they show up on a
-// lead's page immediately instead of only matching future leads.
 export async function backfillContractorIntoRecentLeads(contractor: {
   id: string;
   niches: string;
   lat: number | null;
   lng: number | null;
   radiusMiles: number;
-}) {
-  if (contractor.lat == null || contractor.lng == null) return 0;
+}): Promise<string[]> {
+  if (contractor.lat == null || contractor.lng == null) return [];
 
   const since = new Date(Date.now() - BACKFILL_WINDOW_HOURS * 60 * 60 * 1000);
   const niches = contractor.niches.split(",").map((n) => n.trim().toLowerCase());
@@ -61,7 +49,7 @@ export async function backfillContractorIntoRecentLeads(contractor: {
     include: { claims: true },
   });
 
-  let added = 0;
+  const newClaimIds: string[] = [];
 
   for (const lead of recentLeads) {
     if (!niches.includes(lead.niche.trim().toLowerCase())) continue;
@@ -72,9 +60,9 @@ export async function backfillContractorIntoRecentLeads(contractor: {
     const distance = milesBetween({ lat: lead.lat, lng: lead.lng }, { lat: contractor.lat, lng: contractor.lng });
     if (distance > contractor.radiusMiles) continue;
 
-    await db.claim.create({ data: { leadId: lead.id, contractorId: contractor.id } });
-    added++;
+    const claim = await db.claim.create({ data: { leadId: lead.id, contractorId: contractor.id } });
+    newClaimIds.push(claim.id);
   }
 
-  return added;
+  return newClaimIds;
 }

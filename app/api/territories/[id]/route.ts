@@ -3,9 +3,6 @@ import { db } from "@/lib/db";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const body = await req.json();
-  if (body.isDefault) {
-    await db.territory.updateMany({ where: { isDefault: true }, data: { isDefault: false } });
-  }
   const territory = await db.territory.update({ where: { id: params.id }, data: body });
   return NextResponse.json(territory);
 }

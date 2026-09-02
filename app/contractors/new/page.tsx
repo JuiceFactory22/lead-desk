@@ -12,6 +12,7 @@ export default function NewContractorPage() {
   const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [backfilled, setBackfilled] = useState<number | null>(null);
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -38,6 +39,11 @@ export default function NewContractorPage() {
     setLoading(false);
     if (!res.ok) {
       setError(data.error || "Something went wrong");
+      return;
+    }
+    if (data.backfilledLeadCount > 0) {
+      setBackfilled(data.backfilledLeadCount);
+      setTimeout(() => router.push("/contractors"), 1400);
       return;
     }
     router.push("/contractors");
@@ -106,6 +112,11 @@ export default function NewContractorPage() {
         </div>
 
         {error && <p className="text-sm text-warn">{error}</p>}
+        {backfilled !== null && (
+          <p className="text-sm text-accentDark">
+            Also matched to {backfilled} lead{backfilled === 1 ? "" : "s"} from the last 24 hours. Redirecting…
+          </p>
+        )}
         <button className="btn-primary w-full" disabled={loading}>
           {loading ? "Saving..." : "Add contractor"}
         </button>

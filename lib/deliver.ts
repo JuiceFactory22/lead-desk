@@ -13,11 +13,13 @@ export async function deliverClaim(claimId: string) {
   });
   if (!claim) throw new Error(`Claim ${claimId} not found`);
 
+  // Payment processors (Square included) can send the same "payment
+  // completed" notification more than once by design, for
+  // reliability -- without this guard, a duplicate webhook call
+  // means a duplicate text.
+  if (claim.status === "delivered") return claim;
+
   try {
-    // One single number for every delivery text -- CallRail's local
-    // numbers already handle the "get a good response rate" job on
-    // the opt-in text; by the time someone's paid, the number on the
-    // delivery text doesn't need to do any more persuading.
     const from = process.env.GHL_SENDING_NUMBER;
     if (!from) throw new Error("GHL_SENDING_NUMBER is not set");
 

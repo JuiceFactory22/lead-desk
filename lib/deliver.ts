@@ -1,5 +1,4 @@
 import { db } from "./db";
-import { pickFromNumberForLead } from "./territories";
 import { sendLeadInfoViaGHL } from "./gohighlevel";
 
 // The single trigger this whole system exists for: payment clears ->
@@ -15,7 +14,13 @@ export async function deliverClaim(claimId: string) {
   if (!claim) throw new Error(`Claim ${claimId} not found`);
 
   try {
-    const from = await pickFromNumberForLead(claim.lead);
+    // One single number for every delivery text -- CallRail's local
+    // numbers already handle the "get a good response rate" job on
+    // the opt-in text; by the time someone's paid, the number on the
+    // delivery text doesn't need to do any more persuading.
+    const from = process.env.GHL_SENDING_NUMBER;
+    if (!from) throw new Error("GHL_SENDING_NUMBER is not set");
+
     const { messageId } = await sendLeadInfoViaGHL(claim.contractor, claim.lead, from);
     return db.claim.update({
       where: { id: claimId },
@@ -28,8 +33,6 @@ export async function deliverClaim(claimId: string) {
       },
     });
   } catch (err) {
-    // Payment already succeeded -- never lose that. Just flag that the
-    // automatic send failed so the team can see it and text manually.
     const message = err instanceof Error ? err.message : "Failed to send text";
     return db.claim.update({
       where: { id: claimId },

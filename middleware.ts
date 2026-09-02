@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/square/webhook", "/api/cron"];
-
+const const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/square/webhook", "/api/gohighlevel/webhook", "/api/cron"];
 function secret() {
   return new TextEncoder().encode(process.env.SESSION_SECRET || "dev-secret");
 }

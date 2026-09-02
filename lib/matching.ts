@@ -32,6 +32,10 @@ export async function matchContractors(
   return inRange.slice(0, limit).map((r) => r.contractor);
 }
 
+// Newest-first, so the caller can create claims for every matching
+// recent lead (visible on each lead's page) while only auto-texting
+// about the single most recent one -- catching a contractor up on a
+// whole backlog of leads at once via separate texts reads as spam.
 export async function backfillContractorIntoRecentLeads(contractor: {
   id: string;
   niches: string;
@@ -47,6 +51,7 @@ export async function backfillContractorIntoRecentLeads(contractor: {
   const recentLeads = await db.lead.findMany({
     where: { createdAt: { gte: since } },
     include: { claims: true },
+    orderBy: { createdAt: "desc" },
   });
 
   const newClaimIds: string[] = [];

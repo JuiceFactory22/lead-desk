@@ -8,24 +8,14 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, niches, zips, phoneNumber, isDefault } = body;
+  const { name, niches, zips } = body;
 
-  if (!name || !niches || !zips || !phoneNumber) {
-    return NextResponse.json({ error: "Name, niches, zips, and phone number are required" }, { status: 400 });
-  }
-
-  if (isDefault) {
-    await db.territory.updateMany({ where: { isDefault: true }, data: { isDefault: false } });
+  if (!name || !niches || !zips) {
+    return NextResponse.json({ error: "Name, niches, and zips are required" }, { status: 400 });
   }
 
   const territory = await db.territory.create({
-    data: {
-      name,
-      niches: niches.toLowerCase(),
-      zips,
-      phoneNumber,
-      isDefault: !!isDefault,
-    },
+    data: { name, niches: niches.toLowerCase(), zips },
   });
 
   return NextResponse.json(territory);

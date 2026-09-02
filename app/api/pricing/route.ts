@@ -10,15 +10,15 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { niche, jobType, zips, priceCents } = body;
 
-  if (!niche || !zips || !priceCents) {
-    return NextResponse.json({ error: "Niche, zips, and price are required" }, { status: 400 });
+  if (!niche || !priceCents) {
+    return NextResponse.json({ error: "Niche and price are required" }, { status: 400 });
   }
 
   const rule = await db.pricingRule.create({
     data: {
       niche: niche.toLowerCase(),
       jobType: jobType || null,
-      zips,
+      zips: zips || null,
       priceCents: Number(priceCents),
     },
   });

@@ -52,4 +52,45 @@ function buildPaymentPrompt(lead: { niche: string; zip: string; jobType: string 
     `New ${lead.niche} lead in ${lead.zip}${lead.jobType ? ` -- ${lead.jobType}` : ""}, matching your service area.`,
     lead.jobDetails,
     "",
-    `Unlock the
+    `Unlock the full details: ${paymentUrl}`,
+  ].join("\n");
+}
+
+async function sendSMS(contractor: { name: string; phone: string }, message: string, fromNumber: string): Promise<{ messageId: string }> {
+  const contactId = await upsertContact(contractor.name, contractor.phone);
+
+  const res = await fetch(`${BASE_URL}/conversations/messages`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({ type: "SMS", contactId, message, fromNumber }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`GHL send message failed: ${JSON.stringify(data)}`);
+  return { messageId: data.messageId || data.id || "sent" };
+}
+
+export async function sendLeadInfoViaGHL(
+  contractor: { name: string; phone: string },
+  lead: LeadInfo,
+  fromNumber: string
+): Promise<{ messageId: string }> {
+  return sendSMS(contractor, buildFullMessage(lead), fromNumber);
+}
+
+export async function sendFreeTeaserViaGHL(
+  contractor: { name: string; phone: string },
+  lead: { niche: string; zip: string; jobType: string | null; jobDetails: string },
+  freeRemaining: number,
+  fromNumber: string
+): Promise<{ messageId: string }> {
+  return sendSMS(contractor, buildFreeTeaser(lead, freeRemaining), fromNumber);
+}
+
+export async function sendPaymentPromptViaGHL(
+  contractor: { name: string; phone: string },
+  lead: { niche: string; zip: string; jobType: string | null; jobDetails: string },
+  paymentUrl: string,
+  fromNumber: string
+): Promise<{ messageId: string }> {
+  return sendSMS(contractor, buildPaymentPrompt(lead, paymentUrl), fromNumber);
+}

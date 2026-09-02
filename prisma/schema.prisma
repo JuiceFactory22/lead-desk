@@ -88,6 +88,15 @@ model User {
   createdAt DateTime @default(now())
   discovered DiscoveredContractor[]
 }
+model PricingRule {
+  id         String   @id @default(cuid())
+  niche      String
+  jobType    String?  // null = applies to every job type within the niche
+  zips       String   // comma-separated zip codes this price applies to
+  priceCents Int
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
 // A candidate contractor found by the Google Places search for a
 // territory. Sits here for the team to approve/reject before it
 // becomes a real Contractor -- keeps junk or duplicate listings from

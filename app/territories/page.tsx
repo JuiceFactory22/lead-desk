@@ -6,11 +6,11 @@ export default async function TerritoriesPage() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-xl font-semibold mb-1">Territories</h1>
+      <h1 className="text-xl font-semibold mb-1">Search areas</h1>
       <p className="text-sm text-muted mb-6">
-        Each territory is a niche + set of zip codes with one phone number assigned to it — e.g. &quot;South
-        Florida Roofing&quot; sends from a 305 number. Every lead that falls in a territory&apos;s niche and
-        zips texts contractors from that same number. Add these as you go; nothing needs to be pre-filled.
+        Used only by contractor discovery — a niche + set of zip codes to search for new contractors via
+        Google Places. Doesn&apos;t affect lead matching or which number delivers a lead; that&apos;s
+        radius-based and always uses one number, respectively.
       </p>
       <TerritoriesManager initialTerritories={territories} />
     </div>

@@ -3,10 +3,6 @@ import { db } from "@/lib/db";
 import { createPaymentLinkForClaim } from "@/lib/square";
 import { deliverClaim } from "@/lib/deliver";
 
-// Called by the team when a contractor replies "yes" to the CallRail
-// text. Decides whether this is one of their free trial leads or a
-// paid one, and either unlocks immediately or returns a Square
-// payment link to send them.
 export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
   const claim = await db.claim.findUnique({
     where: { id: params.id },
@@ -14,8 +10,6 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   });
   if (!claim) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Already generated a link earlier -- hand back the same one
-  // instead of creating a second Square order for the same claim.
   if (claim.status === "interested" && claim.squarePaymentLinkUrl) {
     return NextResponse.json({ free: false, checkoutUrl: claim.squarePaymentLinkUrl });
   }
@@ -35,19 +29,21 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
         paidAt: new Date(),
       },
     });
-    // Free trial leads get the same instant, automatic text as a paid
-    // lead -- there's no reason a $0 unlock should be slower than a
-    // real payment.
     const updated = await deliverClaim(claim.id);
     return NextResponse.json({ free: true, claim: updated });
   }
 
-  const { url, orderId } = await createPaymentLinkForClaim(claim, claim.lead.priceCents);
+  try {
+    const { url, orderId } = await createPaymentLinkForClaim(claim, claim.lead.priceCents);
 
-  await db.claim.update({
-    where: { id: claim.id },
-    data: { status: "interested", interestedAt: new Date(), squareOrderId: orderId, squarePaymentLinkUrl: url },
-  });
+    await db.claim.update({
+      where: { id: claim.id },
+      data: { status: "interested", interestedAt: new Date(), squareOrderId: orderId, squarePaymentLinkUrl: url },
+    });
 
-  return NextResponse.json({ free: false, checkoutUrl: url });
+    return NextResponse.json({ free: false, checkoutUrl: url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to create payment link";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

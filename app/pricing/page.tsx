@@ -1,8 +1,10 @@
 import { db } from "@/lib/db";
+import { getRole } from "@/lib/auth";
 import PricingManager from "@/components/PricingManager";
 
 export default async function PricingPage() {
   const rules = await db.pricingRule.findMany({ orderBy: { createdAt: "desc" } });
+  const role = await getRole();
 
   return (
     <div className="max-w-2xl">
@@ -12,7 +14,7 @@ export default async function PricingPage() {
         the price automatically based on these rules — the most specific match (niche + job type + zip) wins
         over a more general one. Leads default to $35 if nothing matches.
       </p>
-      <PricingManager initialRules={rules} />
+      <PricingManager initialRules={rules} readOnly={role !== "admin"} />
     </div>
   );
 }

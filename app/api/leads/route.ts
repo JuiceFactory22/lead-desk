@@ -5,6 +5,7 @@ import { geocodeZip } from "@/lib/geocode";
 import { triggerClaimOutreach } from "@/lib/outreach";
 import { getPriceForLead } from "@/lib/pricing";
 import { getRole } from "@/lib/auth";
+import { sendLeadNotificationEmail } from "@/lib/gohighlevel";
 
 export async function GET() {
   const leads = await db.lead.findMany({
@@ -49,6 +50,15 @@ export async function POST(req: NextRequest) {
       priceCents: finalPriceCents,
     },
   });
+
+  // Notify the team inbox so someone can manually reach out to
+  // contractors not yet in the system -- wrapped so a failed email
+  // never breaks lead creation itself.
+  try {
+    await sendLeadNotificationEmail(lead);
+  } catch (err) {
+    console.error("Failed to send lead notification email:", err);
+  }
 
   const matches = coords ? await matchContractors(niche, coords.lat, coords.lng, 5) : [];
   let claimIds: string[] = [];

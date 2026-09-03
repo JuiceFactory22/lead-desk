@@ -139,18 +139,26 @@ export async function sendPaymentPromptViaGHL(
   return sendSMS(contractor, buildPaymentPrompt(lead, paymentUrl), fromNumber);
 }
 
+// Sends to every address in LEAD_NOTIFY_EMAIL -- comma-separate
+// multiple recipients (e.g. "info@x.com, sales@x.com") to add more
+// people without ever touching code again.
 export async function sendLeadNotificationEmail(lead: LeadInfo): Promise<void> {
-  const notifyEmail = process.env.LEAD_NOTIFY_EMAIL;
-  if (!notifyEmail) throw new Error("LEAD_NOTIFY_EMAIL is not set");
+  const notifyEmails = (process.env.LEAD_NOTIFY_EMAIL || "")
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+  if (notifyEmails.length === 0) throw new Error("LEAD_NOTIFY_EMAIL is not set");
 
-  const contactId = await upsertEmailContact("Lead Desk Notifications", notifyEmail);
   const { subject, html } = buildLeadNotificationEmail(lead);
 
-  const res = await fetch(`${BASE_URL}/conversations/messages`, {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify({ type: "Email", contactId, subject, html, emailTo: notifyEmail }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`GHL send email failed: ${JSON.stringify(data)}`);
+  for (const notifyEmail of notifyEmails) {
+    const contactId = await upsertEmailContact("Lead Desk Notifications", notifyEmail);
+    const res = await fetch(`${BASE_URL}/conversations/messages`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ type: "Email", contactId, subject, html, emailTo: notifyEmail }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(`GHL send email failed for ${notifyEmail}: ${JSON.stringify(data)}`);
+  }
 }

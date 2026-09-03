@@ -4,6 +4,7 @@ import { matchContractors } from "@/lib/matching";
 import { geocodeZip } from "@/lib/geocode";
 import { triggerClaimOutreach } from "@/lib/outreach";
 import { getPriceForLead } from "@/lib/pricing";
+import { getRole } from "@/lib/auth";
 
 export async function GET() {
   const leads = await db.lead.findMany({
@@ -23,7 +24,10 @@ export async function POST(req: NextRequest) {
 
   const coords = await geocodeZip(zip);
 
-  let finalPriceCents = priceCents ? Number(priceCents) : null;
+  const role = await getRole();
+  const submittedPrice = role === "admin" && priceCents ? Number(priceCents) : null;
+
+  let finalPriceCents = submittedPrice;
   if (!finalPriceCents) {
     finalPriceCents = await getPriceForLead(niche, jobType || null, zip);
   }

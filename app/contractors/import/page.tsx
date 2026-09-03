@@ -3,13 +3,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCategories } from "@/lib/useCategories";
 
-type ParsedRow = { name: string; phone: string };
+type ParsedRow = { name: string; phone: string; city: string };
 
 export default function ImportContractorsPage() {
   const router = useRouter();
   const { niches } = useCategories();
   const [niche, setNiche] = useState("");
-  const [city, setCity] = useState("");
   const [radiusMiles, setRadiusMiles] = useState("40");
   const [freeLeadsLimit, setFreeLeadsLimit] = useState("3");
   const [raw, setRaw] = useState("");
@@ -26,16 +25,16 @@ export default function ImportContractorsPage() {
     for (const line of lines) {
       const cells = line.split("\t").map((c) => c.trim());
       if (cells[0]?.toLowerCase() === "name") continue;
-      const [name, phone] = cells;
-      if (!name || !phone) continue;
-      parsed.push({ name, phone });
+      const [name, phone, city] = cells;
+      if (!name || !phone || !city) continue;
+      parsed.push({ name, phone, city });
     }
     setRows(parsed);
   }
 
   async function doImport() {
-    if (!niche || !city) {
-      setError("Niche and city are required");
+    if (!niche) {
+      setError("Niche is required");
       return;
     }
     setLoading(true);
@@ -45,7 +44,6 @@ export default function ImportContractorsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         niche,
-        city,
         radiusMiles: Number(radiusMiles),
         freeLeadsLimit: Number(freeLeadsLimit),
         rows,
@@ -64,8 +62,8 @@ export default function ImportContractorsPage() {
     <div className="max-w-2xl">
       <h1 className="text-xl font-semibold mb-1">Bulk import contractors</h1>
       <p className="text-sm text-muted mb-6">
-        Import one market at a time -- same as one tab in your research sheet. Select the Name and Phone
-        columns for that tab, copy, and paste below. No automatic texts get sent for contractors added this way.
+        Paste Name, Phone, and City columns together -- mix as many different cities as you want in one paste,
+        each row carries its own location. No automatic texts get sent for contractors added this way.
       </p>
 
       <div className="card p-5 space-y-4 mb-6">
@@ -80,25 +78,19 @@ export default function ImportContractorsPage() {
             </select>
           </div>
           <div>
-            <label className="label">City (or city, state)</label>
-            <input className="input" placeholder="Providence, RI" value={city} onChange={(e) => setCity(e.target.value)} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
             <label className="label">Radius (miles)</label>
             <input className="input" type="number" value={radiusMiles} onChange={(e) => setRadiusMiles(e.target.value)} />
           </div>
-          <div>
-            <label className="label">Free trial leads</label>
-            <input className="input" type="number" value={freeLeadsLimit} onChange={(e) => setFreeLeadsLimit(e.target.value)} />
-          </div>
         </div>
         <div>
-          <label className="label">Paste Name + Phone columns (one contractor per line)</label>
+          <label className="label">Free trial leads</label>
+          <input className="input" type="number" value={freeLeadsLimit} onChange={(e) => setFreeLeadsLimit(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Paste Name + Phone + City columns (one contractor per line)</label>
           <textarea
             className="input min-h-40 font-mono text-xs"
-            placeholder={"Mike Torres\t305-555-0101\nDana Kessler\t305-555-0102"}
+            placeholder={"Mike Torres\t305-555-0101\tMiami, FL\nDana Kessler\t305-555-0102\tTampa, FL"}
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
           />
@@ -112,8 +104,8 @@ export default function ImportContractorsPage() {
           <div className="max-h-64 overflow-y-auto text-xs divide-y divide-line">
             {rows.map((r, i) => (
               <div key={i} className="py-2 flex justify-between">
-                <span>{r.name}</span>
-                <span className="text-muted">{r.phone}</span>
+                <span>{r.name} · {r.phone}</span>
+                <span className="text-muted">{r.city}</span>
               </div>
             ))}
           </div>

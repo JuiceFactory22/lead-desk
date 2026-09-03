@@ -13,7 +13,10 @@ export default async function ContractorsPage() {
         <div>
           <h1 className="text-xl font-semibold">Contractors</h1>
         </div>
-        <Link href="/contractors/new" className="btn-primary">Add contractor</Link>
+            <div className="flex items-center gap-2">
+          <Link href="/contractors/import" className="btn-secondary">Bulk import</Link>
+          <Link href="/contractors/new" className="btn-primary">Add contractor</Link>
+        </div>
       </div>
 
       <div className="card divide-y divide-line">

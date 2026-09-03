@@ -7,11 +7,10 @@ function secret() {
   return new TextEncoder().encode(process.env.SESSION_SECRET || "dev-secret");
 }
 
-// Team auth is intentionally simple for v1: one shared password gets
-// you a signed session cookie. Swap for per-user accounts later by
-// checking against the User table instead of TEAM_PASSWORD.
-export async function createSession() {
-  const token = await new SignJWT({ team: true })
+export type Role = "admin" | "employee";
+
+export async function createSession(role: Role) {
+  const token = await new SignJWT({ team: true, role })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("30d")
@@ -34,6 +33,17 @@ export async function isAuthed() {
     return true;
   } catch {
     return false;
+  }
+}
+
+export async function getRole(): Promise<Role | null> {
+  const token = cookies().get(COOKIE_NAME)?.value;
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, secret());
+    return (payload.role as Role) ?? "admin";
+  } catch {
+    return null;
   }
 }
 

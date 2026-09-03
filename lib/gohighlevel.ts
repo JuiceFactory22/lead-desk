@@ -24,15 +24,33 @@ async function upsertContact(name: string, phone: string): Promise<string> {
 
 type LeadInfo = { name: string; phone: string; email: string | null; address: string; jobType: string | null; jobDetails: string; niche: string; zip: string };
 
+// Capitalizes the niche for display -- stored lowercase ("roofing")
+// but should read as "Roofing" in a text.
+function titleCase(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Job details are free-typed by the team -- this just makes sure
+// they read as a proper sentence (capitalized, ends with punctuation)
+// without rewriting the actual content.
+function polish(s: string): string {
+  const trimmed = s.trim();
+  if (!trimmed) return trimmed;
+  const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+  return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
+}
+
 function buildFullMessage(lead: LeadInfo) {
   return [
-    `Lead Unlocked -- ${lead.niche} (${lead.zip})`,
+    `Lead Unlocked — ${titleCase(lead.niche)} (${lead.zip})`,
     lead.jobType ? `Type: ${lead.jobType}` : null,
+    "",
     `Name: ${lead.name}`,
     `Phone: ${lead.phone}`,
     lead.email ? `Email: ${lead.email}` : null,
     `Address: ${lead.address}`,
-    `Details: ${lead.jobDetails}`,
+    "",
+    `Details: ${polish(lead.jobDetails)}`,
   ]
     .filter((line) => line !== null)
     .join("\n");
@@ -40,20 +58,28 @@ function buildFullMessage(lead: LeadInfo) {
 
 function buildFreeTeaser(lead: { niche: string; zip: string; jobType: string | null; jobDetails: string }, freeRemaining: number) {
   return [
-    `New ${lead.niche} lead in ${lead.zip}${lead.jobType ? ` -- ${lead.jobType}` : ""}, matching your service area.`,
-    lead.jobDetails,
+    `New ${titleCase(lead.niche)} Lead — ${lead.zip}`,
+    lead.jobType ? `Type: ${lead.jobType}` : null,
     "",
-    `You have ${freeRemaining} free lead${freeRemaining === 1 ? "" : "s"} left. Reply YES to get the full details.`,
-  ].join("\n");
+    polish(lead.jobDetails),
+    "",
+    `You have ${freeRemaining} free lead${freeRemaining === 1 ? "" : "s"} remaining. Reply YES to unlock the full details.`,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
 }
 
 function buildPaymentPrompt(lead: { niche: string; zip: string; jobType: string | null; jobDetails: string }, paymentUrl: string) {
   return [
-    `New ${lead.niche} lead in ${lead.zip}${lead.jobType ? ` -- ${lead.jobType}` : ""}, matching your service area.`,
-    lead.jobDetails,
+    `New ${titleCase(lead.niche)} Lead — ${lead.zip}`,
+    lead.jobType ? `Type: ${lead.jobType}` : null,
+    "",
+    polish(lead.jobDetails),
     "",
     `Unlock the full details: ${paymentUrl}`,
-  ].join("\n");
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
 }
 
 async function sendSMS(contractor: { name: string; phone: string }, message: string, fromNumber: string): Promise<{ messageId: string }> {

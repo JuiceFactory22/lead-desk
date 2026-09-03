@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCategories } from "@/lib/useCategories";
+import { useRole } from "@/lib/useRole";
 
 export default function NewLeadPage() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function NewLeadPage() {
 
   const { niches, jobTypesByNiche } = useCategories();
   const jobTypeOptions = jobTypesByNiche[form.niche] || [];
+  const { isAdmin } = useRole();
 
   useEffect(() => {
     if (!form.niche || !form.zip) {
@@ -133,21 +135,29 @@ export default function NewLeadPage() {
           </div>
           <div>
             <label className="label">Price per contractor ($)</label>
-            <input
-              className="input"
-              type="number"
-              placeholder={suggestedPrice != null ? String(suggestedPrice / 100) : "35"}
-              value={form.priceCents ? String(Number(form.priceCents) / 100) : ""}
-              onChange={(e) => update("priceCents", e.target.value ? String(Math.round(Number(e.target.value) * 100)) : "")}
-            />
-            {suggestedPrice != null && !form.priceCents && (
-              <p className="text-xs text-muted mt-1">
-                Using your configured price: ${(suggestedPrice / 100).toFixed(0)}
-              </p>
-            )}
-            {suggestedPrice == null && form.niche && form.zip && !form.priceCents && (
-              <p className="text-xs text-muted mt-1">
-                No pricing rule matches yet — will default to $35. Set one up on the Pricing page.
+            {isAdmin ? (
+              <>
+                <input
+                  className="input"
+                  type="number"
+                  placeholder={suggestedPrice != null ? String(suggestedPrice / 100) : "35"}
+                  value={form.priceCents ? String(Number(form.priceCents) / 100) : ""}
+                  onChange={(e) => update("priceCents", e.target.value ? String(Math.round(Number(e.target.value) * 100)) : "")}
+                />
+                {suggestedPrice != null && !form.priceCents && (
+                  <p className="text-xs text-muted mt-1">
+                    Using your configured price: ${(suggestedPrice / 100).toFixed(0)}
+                  </p>
+                )}
+                {suggestedPrice == null && form.niche && form.zip && !form.priceCents && (
+                  <p className="text-xs text-muted mt-1">
+                    No pricing rule matches yet — will default to $35. Set one up on the Pricing page.
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="input flex items-center text-muted">
+                {suggestedPrice != null ? `$${(suggestedPrice / 100).toFixed(0)} (set by admin)` : "$35 default (set by admin)"}
               </p>
             )}
           </div>

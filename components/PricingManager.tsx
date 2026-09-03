@@ -12,7 +12,7 @@ type PricingRule = {
   active: boolean;
 };
 
-export default function PricingManager({ initialRules }: { initialRules: PricingRule[] }) {
+export default function PricingManager({ initialRules, readOnly = false }: { initialRules: PricingRule[]; readOnly?: boolean }) {
   const router = useRouter();
   const [rules, setRules] = useState(initialRules);
   const [form, setForm] = useState({ niche: "", jobType: "", zips: "", price: "" });
@@ -88,18 +88,25 @@ export default function PricingManager({ initialRules }: { initialRules: Pricing
 
   return (
     <div className="space-y-6">
-      <div className="card p-5 flex items-center justify-between">
-        <div>
-          <div className="text-sm font-medium">Sync defaults from Google Sheet</div>
-          <div className="text-xs text-muted mt-0.5">
-            Pulls Category/Service/Price rows in as defaults. Your area-specific overrides below are never touched.
+      {readOnly && (
+        <p className="text-sm text-muted bg-paper border border-line rounded-md px-3 py-2">
+          You can view pricing here, but only admins can add, edit, or sync prices.
+        </p>
+      )}
+      {!readOnly && (
+        <div className="card p-5 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-medium">Sync defaults from Google Sheet</div>
+            <div className="text-xs text-muted mt-0.5">
+              Pulls Category/Service/Price rows in as defaults. Your area-specific overrides below are never touched.
+            </div>
           </div>
+          <button className="btn-secondary text-sm" disabled={syncing} onClick={syncFromSheet}>
+            {syncing ? "Syncing..." : "Sync now"}
+          </button>
         </div>
-        <button className="btn-secondary text-sm" disabled={syncing} onClick={syncFromSheet}>
-          {syncing ? "Syncing..." : "Sync now"}
-        </button>
-      </div>
-      {syncResult && (
+      )}
+      {!readOnly && syncResult && (
         <p className="text-sm text-accentDark">
           Synced — {syncResult.created} new default{syncResult.created === 1 ? "" : "s"}, {syncResult.updated} updated.
         </p>
@@ -118,12 +125,16 @@ export default function PricingManager({ initialRules }: { initialRules: Pricing
             </div>
             <div className="flex items-center gap-2 text-xs">
               {!r.active && <span className="pill bg-line/60 text-muted">Inactive</span>}
-              <button className="text-muted hover:text-ink px-2" onClick={() => toggleActive(r.id, r.active)}>
-                {r.active ? "Deactivate" : "Activate"}
-              </button>
-              <button className="text-muted hover:text-warn px-2" onClick={() => removeRule(r.id)}>
-                Delete
-              </button>
+              {!readOnly && (
+                <>
+                  <button className="text-muted hover:text-ink px-2" onClick={() => toggleActive(r.id, r.active)}>
+                    {r.active ? "Deactivate" : "Activate"}
+                  </button>
+                  <button className="text-muted hover:text-warn px-2" onClick={() => removeRule(r.id)}>
+                    Delete
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ))}
@@ -134,6 +145,7 @@ export default function PricingManager({ initialRules }: { initialRules: Pricing
         )}
       </div>
 
+      {!readOnly && (
       <form onSubmit={addRule} className="card p-5 space-y-3">
         <div className="text-sm font-medium">Add an area override</div>
         <p className="text-xs text-muted">
@@ -192,6 +204,7 @@ export default function PricingManager({ initialRules }: { initialRules: Pricing
           {loading ? "Adding..." : "Add rule"}
         </button>
       </form>
+      )}
     </div>
   );
 }

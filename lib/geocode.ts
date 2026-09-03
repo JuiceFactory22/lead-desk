@@ -1,9 +1,12 @@
-// Turns a zip code into lat/lng coordinates, and measures distance
-// between two points -- this is what lets contractor coverage be
-// "within N miles of my shop" instead of a hand-maintained zip list.
+// Turns a zip code into lat/lng coordinates plus the city/state name
+// -- this is what lets contractor coverage be "within N miles of my
+// shop" instead of a hand-maintained zip list, and lets texts say
+// "Miami, FL" instead of a bare zip a contractor might not recognize.
 const KEY = process.env.GOOGLE_PLACES_API_KEY;
 
-export async function geocodeZip(zip: string): Promise<{ lat: number; lng: number } | null> {
+type GeocodeResult = { lat: number; lng: number; city: string | null; state: string | null };
+
+export async function geocodeZip(zip: string): Promise<GeocodeResult | null> {
   if (!KEY) throw new Error("GOOGLE_PLACES_API_KEY is not set");
 
   const res = await fetch(
@@ -12,8 +15,22 @@ export async function geocodeZip(zip: string): Promise<{ lat: number; lng: numbe
   const data = await res.json();
   if (data.status !== "OK" || !data.results?.[0]) return null;
 
-  const loc = data.results[0].geometry.location;
-  return { lat: loc.lat, lng: loc.lng };
+  const result = data.results[0];
+  const loc = result.geometry.location;
+  const components: { long_name: string; short_name: string; types: string[] }[] = result.address_components || [];
+
+  const cityComponent =
+    components.find((c) => c.types.includes("locality")) ||
+    components.find((c) => c.types.includes("postal_town")) ||
+    components.find((c) => c.types.includes("sublocality"));
+  const stateComponent = components.find((c) => c.types.includes("administrative_area_level_1"));
+
+  return {
+    lat: loc.lat,
+    lng: loc.lng,
+    city: cityComponent?.long_name ?? null,
+    state: stateComponent?.short_name ?? null,
+  };
 }
 
 // Haversine formula -- straight-line ("as the crow flies") distance

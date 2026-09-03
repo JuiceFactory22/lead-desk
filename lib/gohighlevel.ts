@@ -33,10 +33,14 @@ async function upsertEmailContact(name: string, email: string): Promise<string> 
   return data.contact.id as string;
 }
 
-type LeadInfo = { name: string; phone: string; email: string | null; address: string; jobType: string | null; jobDetails: string; niche: string; zip: string };
+type LeadInfo = { name: string; phone: string; email: string | null; address: string; jobType: string | null; jobDetails: string; niche: string; zip: string; city: string | null; state: string | null };
 
 function titleCase(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function locationLabel(lead: { zip: string; city: string | null; state: string | null }): string {
+  return lead.city ? `${lead.city}${lead.state ? `, ${lead.state}` : ""} ${lead.zip}` : lead.zip;
 }
 
 function polish(s: string): string {
@@ -48,7 +52,7 @@ function polish(s: string): string {
 
 function buildFullMessage(lead: LeadInfo) {
   return [
-    `Lead Unlocked — ${titleCase(lead.niche)} (${lead.zip})`,
+    `Lead Unlocked — ${titleCase(lead.niche)} (${locationLabel(lead)})`,
     lead.jobType ? `Type: ${lead.jobType}` : null,
     "",
     `Name: ${lead.name}`,
@@ -62,9 +66,9 @@ function buildFullMessage(lead: LeadInfo) {
     .join("\n");
 }
 
-function buildFreeTeaser(lead: { niche: string; zip: string; jobType: string | null; jobDetails: string }, freeRemaining: number) {
+function buildFreeTeaser(lead: { niche: string; zip: string; city: string | null; state: string | null; jobType: string | null; jobDetails: string }, freeRemaining: number) {
   return [
-    `New ${titleCase(lead.niche)} Lead — ${lead.zip}`,
+    `New ${titleCase(lead.niche)} Lead — ${locationLabel(lead)}`,
     lead.jobType ? `Type: ${lead.jobType}` : null,
     "",
     polish(lead.jobDetails),
@@ -75,9 +79,9 @@ function buildFreeTeaser(lead: { niche: string; zip: string; jobType: string | n
     .join("\n");
 }
 
-function buildPaymentPrompt(lead: { niche: string; zip: string; jobType: string | null; jobDetails: string }, paymentUrl: string) {
+function buildPaymentPrompt(lead: { niche: string; zip: string; city: string | null; state: string | null; jobType: string | null; jobDetails: string }, paymentUrl: string) {
   return [
-    `New ${titleCase(lead.niche)} Lead — ${lead.zip}`,
+    `New ${titleCase(lead.niche)} Lead — ${locationLabel(lead)}`,
     lead.jobType ? `Type: ${lead.jobType}` : null,
     "",
     polish(lead.jobDetails),
@@ -92,7 +96,7 @@ function buildLeadNotificationEmail(lead: LeadInfo) {
   const subject = `New Lead — ${titleCase(lead.niche)} (${lead.zip})`;
   const html = [
     `<p>A new lead just came in.</p>`,
-    `<p><strong>${titleCase(lead.niche)}${lead.jobType ? ` — ${lead.jobType}` : ""} (${lead.zip})</strong></p>`,
+    `<p><strong>${titleCase(lead.niche)}${lead.jobType ? ` — ${lead.jobType}` : ""} (${locationLabel(lead)})</strong></p>`,
     `<p>Name: ${lead.name}<br>Phone: ${lead.phone}${lead.email ? `<br>Email: ${lead.email}` : ""}<br>Address: ${lead.address}</p>`,
     `<p>${polish(lead.jobDetails)}</p>`,
     `<p>The app has already matched and texted any contractors already in the system. Reach out manually to any contractors not yet added.</p>`,
@@ -123,7 +127,7 @@ export async function sendLeadInfoViaGHL(
 
 export async function sendFreeTeaserViaGHL(
   contractor: { name: string; phone: string },
-  lead: { niche: string; zip: string; jobType: string | null; jobDetails: string },
+  lead: { niche: string; zip: string; city: string | null; state: string | null; jobType: string | null; jobDetails: string },
   freeRemaining: number,
   fromNumber: string
 ): Promise<{ messageId: string }> {
@@ -132,16 +136,13 @@ export async function sendFreeTeaserViaGHL(
 
 export async function sendPaymentPromptViaGHL(
   contractor: { name: string; phone: string },
-  lead: { niche: string; zip: string; jobType: string | null; jobDetails: string },
+  lead: { niche: string; zip: string; city: string | null; state: string | null; jobType: string | null; jobDetails: string },
   paymentUrl: string,
   fromNumber: string
 ): Promise<{ messageId: string }> {
   return sendSMS(contractor, buildPaymentPrompt(lead, paymentUrl), fromNumber);
 }
 
-// Sends to every address in LEAD_NOTIFY_EMAIL -- comma-separate
-// multiple recipients (e.g. "info@x.com, sales@x.com") to add more
-// people without ever touching code again.
 export async function sendLeadNotificationEmail(lead: LeadInfo): Promise<void> {
   const notifyEmails = (process.env.LEAD_NOTIFY_EMAIL || "")
     .split(",")

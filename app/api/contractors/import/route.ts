@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
           radiusMiles: radiusMiles || 40,
           lat: coords.lat,
           lng: coords.lng,
-          freeLeadsLimit: freeLeadsLimit ?? 2,
+          freeLeadsLimit: freeLeadsLimit ?? 3,
         },
       });
       existingPhones.add(normalizedPhone);

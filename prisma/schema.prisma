@@ -32,6 +32,8 @@ model Lead {
   email       String?
   address     String
   zip         String
+  city        String?  // e.g. "Miami" -- geocoded once at intake, shown instead of a bare zip in texts
+  state       String?  // e.g. "FL"
   lat         Float?   // geocoded from zip at intake, used for radius matching
   lng         Float?
   niche       String

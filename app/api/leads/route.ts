@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
       zip,
       lat: coords?.lat ?? null,
       lng: coords?.lng ?? null,
+      city: coords?.city ?? null,
+      state: coords?.state ?? null,
       niche,
       jobType: jobType || null,
       jobDetails,

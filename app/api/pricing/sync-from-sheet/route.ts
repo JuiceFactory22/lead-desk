@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { fetchPricingFromSheet } from "@/lib/sheetPricing";
+import { getRole } from "@/lib/auth";
 
 export async function POST() {
+  const role = await getRole();
+  if (role !== "admin") {
+    return NextResponse.json({ error: "Only admins can sync pricing" }, { status: 403 });
+  }
+
   try {
     const rows = await fetchPricingFromSheet();
     let created = 0;

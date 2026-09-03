@@ -22,17 +22,23 @@ async function upsertContact(name: string, phone: string): Promise<string> {
   return data.contact.id as string;
 }
 
+async function upsertEmailContact(name: string, email: string): Promise<string> {
+  const res = await fetch(`${BASE_URL}/contacts/upsert`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({ locationId: LOCATION_ID, name, email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`GHL contact upsert failed: ${JSON.stringify(data)}`);
+  return data.contact.id as string;
+}
+
 type LeadInfo = { name: string; phone: string; email: string | null; address: string; jobType: string | null; jobDetails: string; niche: string; zip: string };
 
-// Capitalizes the niche for display -- stored lowercase ("roofing")
-// but should read as "Roofing" in a text.
 function titleCase(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-// Job details are free-typed by the team -- this just makes sure
-// they read as a proper sentence (capitalized, ends with punctuation)
-// without rewriting the actual content.
 function polish(s: string): string {
   const trimmed = s.trim();
   if (!trimmed) return trimmed;
@@ -82,6 +88,18 @@ function buildPaymentPrompt(lead: { niche: string; zip: string; jobType: string 
     .join("\n");
 }
 
+function buildLeadNotificationEmail(lead: LeadInfo) {
+  const subject = `New Lead — ${titleCase(lead.niche)} (${lead.zip})`;
+  const html = [
+    `<p>A new lead just came in.</p>`,
+    `<p><strong>${titleCase(lead.niche)}${lead.jobType ? ` — ${lead.jobType}` : ""} (${lead.zip})</strong></p>`,
+    `<p>Name: ${lead.name}<br>Phone: ${lead.phone}${lead.email ? `<br>Email: ${lead.email}` : ""}<br>Address: ${lead.address}</p>`,
+    `<p>${polish(lead.jobDetails)}</p>`,
+    `<p>The app has already matched and texted any contractors already in the system. Reach out manually to any contractors not yet added.</p>`,
+  ].join("");
+  return { subject, html };
+}
+
 async function sendSMS(contractor: { name: string; phone: string }, message: string, fromNumber: string): Promise<{ messageId: string }> {
   const contactId = await upsertContact(contractor.name, contractor.phone);
 
@@ -119,4 +137,20 @@ export async function sendPaymentPromptViaGHL(
   fromNumber: string
 ): Promise<{ messageId: string }> {
   return sendSMS(contractor, buildPaymentPrompt(lead, paymentUrl), fromNumber);
+}
+
+export async function sendLeadNotificationEmail(lead: LeadInfo): Promise<void> {
+  const notifyEmail = process.env.LEAD_NOTIFY_EMAIL;
+  if (!notifyEmail) throw new Error("LEAD_NOTIFY_EMAIL is not set");
+
+  const contactId = await upsertEmailContact("Lead Desk Notifications", notifyEmail);
+  const { subject, html } = buildLeadNotificationEmail(lead);
+
+  const res = await fetch(`${BASE_URL}/conversations/messages`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({ type: "Email", contactId, subject, html, emailTo: notifyEmail }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`GHL send email failed: ${JSON.stringify(data)}`);
 }

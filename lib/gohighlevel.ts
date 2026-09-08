@@ -92,18 +92,6 @@ function buildPaymentPrompt(lead: { niche: string; zip: string; city: string | n
     .join("\n");
 }
 
-function buildLeadNotificationEmail(lead: LeadInfo) {
-  const subject = `New Lead — ${titleCase(lead.niche)} (${lead.zip})`;
-  const html = [
-    `<p>A new lead just came in.</p>`,
-    `<p><strong>${titleCase(lead.niche)}${lead.jobType ? ` — ${lead.jobType}` : ""} (${locationLabel(lead)})</strong></p>`,
-    `<p>Name: ${lead.name}<br>Phone: ${lead.phone}${lead.email ? `<br>Email: ${lead.email}` : ""}<br>Address: ${lead.address}</p>`,
-    `<p>${polish(lead.jobDetails)}</p>`,
-    `<p>The app has already matched and texted any contractors already in the system. Reach out manually to any contractors not yet added.</p>`,
-  ].join("");
-  return { subject, html };
-}
-
 async function sendSMS(contractor: { name: string; phone: string }, message: string, fromNumber: string): Promise<{ messageId: string }> {
   const contactId = await upsertContact(contractor.name, contractor.phone);
 
@@ -143,14 +131,12 @@ export async function sendPaymentPromptViaGHL(
   return sendSMS(contractor, buildPaymentPrompt(lead, paymentUrl), fromNumber);
 }
 
-export async function sendLeadNotificationEmail(lead: LeadInfo): Promise<void> {
+async function sendTeamEmail(subject: string, html: string): Promise<void> {
   const notifyEmails = (process.env.LEAD_NOTIFY_EMAIL || "")
     .split(",")
     .map((e) => e.trim())
     .filter(Boolean);
   if (notifyEmails.length === 0) throw new Error("LEAD_NOTIFY_EMAIL is not set");
-
-  const { subject, html } = buildLeadNotificationEmail(lead);
 
   for (const notifyEmail of notifyEmails) {
     const contactId = await upsertEmailContact("Lead Desk Notifications", notifyEmail);
@@ -162,4 +148,38 @@ export async function sendLeadNotificationEmail(lead: LeadInfo): Promise<void> {
     const data = await res.json();
     if (!res.ok) throw new Error(`GHL send email failed for ${notifyEmail}: ${JSON.stringify(data)}`);
   }
+}
+
+export async function sendLeadDistributedEmail(lead: LeadInfo, contractors: { name: string }[]): Promise<void> {
+  const subject = `Lead Distributed — ${titleCase(lead.niche)} (${locationLabel(lead)}) — ${contractors.length} contractor${contractors.length === 1 ? "" : "s"}`;
+  const html = [
+    `<p>A new lead just went out to ${contractors.length} contractor${contractors.length === 1 ? "" : "s"} already in the system.</p>`,
+    `<p><strong>${titleCase(lead.niche)}${lead.jobType ? ` — ${lead.jobType}` : ""} (${locationLabel(lead)})</strong></p>`,
+    `<p>Name: ${lead.name}<br>Phone: ${lead.phone}${lead.email ? `<br>Email: ${lead.email}` : ""}<br>Address: ${lead.address}</p>`,
+    `<p>${polish(lead.jobDetails)}</p>`,
+    contractors.length > 0
+      ? `<p>Sent to: ${contractors.map((c) => c.name).join(", ")}</p>`
+      : `<p>No contractors matched in the system yet -- reach out manually to contractors not yet added.</p>`,
+  ].join("");
+  return sendTeamEmail(subject, html);
+}
+
+export async function sendReplyReceivedEmail(params: { fromPhone: string; body: string; contractorName: string | null }): Promise<void> {
+  const subject = `Reply Received${params.contractorName ? ` — ${params.contractorName}` : ""}`;
+  const html = [
+    `<p>Inbound text received${params.contractorName ? ` from <strong>${params.contractorName}</strong>` : " from an unrecognized number"}.</p>`,
+    `<p>From: ${params.fromPhone}</p>`,
+    `<p>Message: "${params.body}"</p>`,
+  ].join("");
+  return sendTeamEmail(subject, html);
+}
+
+export async function sendPaymentReceivedEmail(lead: LeadInfo, contractor: { name: string }, priceCents: number): Promise<void> {
+  const subject = `Payment Received — ${titleCase(lead.niche)} (${locationLabel(lead)}) — $${(priceCents / 100).toFixed(0)}`;
+  const html = [
+    `<p><strong>${contractor.name}</strong> just paid $${(priceCents / 100).toFixed(0)} for a lead.</p>`,
+    `<p>${titleCase(lead.niche)}${lead.jobType ? ` — ${lead.jobType}` : ""} (${locationLabel(lead)})</p>`,
+    `<p>Lead: ${lead.name} — ${lead.phone}</p>`,
+  ].join("");
+  return sendTeamEmail(subject, html);
 }

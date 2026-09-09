@@ -8,6 +8,18 @@ function normalizePhone(phone: string): string {
   return digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
 }
 
+const REDEEM_EXACT = ["yes", "y", "sure", "ok", "okay", "yeah", "yep", "redeem"];
+const REDEEM_PHRASES = ["send it", "i want it", "want it", "sounds good", "i'll take it", "ill take it"];
+const DECLINE_EXACT = ["no", "pass", "skip", "nah"];
+const DECLINE_PHRASES = ["no thanks", "not for me", "not interested", "i'll pass", "ill pass"];
+
+function detectIntent(body: string): "redeem" | "decline" | null {
+  const normalized = body.trim().toLowerCase().replace(/[.!?]+$/, "");
+  if (REDEEM_EXACT.includes(normalized) || REDEEM_PHRASES.some((p) => normalized.includes(p))) return "redeem";
+  if (DECLINE_EXACT.includes(normalized) || DECLINE_PHRASES.some((p) => normalized.includes(p))) return "decline";
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   const event = await req.json();
 
@@ -30,10 +42,9 @@ export async function POST(req: NextRequest) {
     console.error("Failed to send reply notification email:", err);
   }
 
-  const lowerBody = body.toLowerCase();
-  const looksLikeYes = lowerBody === "yes" || lowerBody === "y" || lowerBody.startsWith("yes");
-  if (!looksLikeYes) {
-    return NextResponse.json({ ok: true, skipped: "not a yes" });
+  const intent = detectIntent(body);
+  if (!intent) {
+    return NextResponse.json({ ok: true, skipped: "no clear intent" });
   }
 
   if (!contractor) {
@@ -48,6 +59,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: "no pending claim for this contractor" });
   }
 
-  await unlockFreeLead(pendingClaim.id);
-  return NextResponse.json({ ok: true, unlocked: pendingClaim.id });
+  if (intent === "redeem") {
+    await unlockFreeLead(pendingClaim.id);
+    return NextResponse.json({ ok: true, unlocked: pendingClaim.id });
+  }
+
+  await db.claim.update({ where: { id: pendingClaim.id }, data: { status: "declined" } });
+  return NextResponse.json({ ok: true, declined: pendingClaim.id });
 }

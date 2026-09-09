@@ -66,27 +66,40 @@ function buildFullMessage(lead: LeadInfo) {
     .join("\n");
 }
 
-function buildFreeTeaser(lead: { niche: string; zip: string; city: string | null; state: string | null; jobType: string | null; jobDetails: string }, freeRemaining: number) {
+function buildFreeTeaser(
+  lead: { niche: string; zip: string; city: string | null; state: string | null; jobType: string | null; jobDetails: string },
+  freeRemaining: number,
+  freeLeadsLimit: number
+) {
   return [
-    `New ${titleCase(lead.niche)} Lead — ${locationLabel(lead)}`,
-    lead.jobType ? `Type: ${lead.jobType}` : null,
+    `Hey, it's Krystelle! We have a new ${titleCase(lead.niche)} lead that looks like it fits your service area —`,
     "",
-    polish(lead.jobDetails),
+    `Service Area: ${locationLabel(lead)}`,
+    lead.jobType ? `Service Type: ${lead.jobType}` : null,
+    `Job Details: ${polish(lead.jobDetails)}`,
     "",
-    `You have ${freeRemaining} free lead${freeRemaining === 1 ? "" : "s"} remaining. Reply YES to unlock the full details.`,
+    `Just a reminder — we give you ${freeLeadsLimit} free lead${freeLeadsLimit === 1 ? "" : "s"} to start. You have ${freeRemaining} FREE lead${freeRemaining === 1 ? "" : "s"} left.`,
+    "",
+    `Just let me know if you want to redeem a free lead and I'll send all the details. Or you can pass and wait for something that's a better fit for you. Thanks!`,
   ]
     .filter((line) => line !== null)
     .join("\n");
 }
 
-function buildPaymentPrompt(lead: { niche: string; zip: string; city: string | null; state: string | null; jobType: string | null; jobDetails: string }, paymentUrl: string) {
+function buildPaymentPrompt(
+  lead: { niche: string; zip: string; city: string | null; state: string | null; jobType: string | null; jobDetails: string },
+  paymentUrl: string
+) {
   return [
-    `New ${titleCase(lead.niche)} Lead — ${locationLabel(lead)}`,
-    lead.jobType ? `Type: ${lead.jobType}` : null,
+    `Hey, it's Krystelle! We have a new ${titleCase(lead.niche)} lead that looks like it fits your service area —`,
     "",
-    polish(lead.jobDetails),
+    `Service Area: ${locationLabel(lead)}`,
+    lead.jobType ? `Service Type: ${lead.jobType}` : null,
+    `Job Details: ${polish(lead.jobDetails)}`,
     "",
-    `Unlock the full details: ${paymentUrl}`,
+    `You already used all your free leads — but use this link to get the FULL contact details. Good luck! I hope you win the job.`,
+    "",
+    paymentUrl,
   ]
     .filter((line) => line !== null)
     .join("\n");
@@ -117,9 +130,10 @@ export async function sendFreeTeaserViaGHL(
   contractor: { name: string; phone: string },
   lead: { niche: string; zip: string; city: string | null; state: string | null; jobType: string | null; jobDetails: string },
   freeRemaining: number,
+  freeLeadsLimit: number,
   fromNumber: string
 ): Promise<{ messageId: string }> {
-  return sendSMS(contractor, buildFreeTeaser(lead, freeRemaining), fromNumber);
+  return sendSMS(contractor, buildFreeTeaser(lead, freeRemaining, freeLeadsLimit), fromNumber);
 }
 
 export async function sendPaymentPromptViaGHL(

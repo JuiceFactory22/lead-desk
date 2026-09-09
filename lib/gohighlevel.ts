@@ -39,6 +39,12 @@ function titleCase(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+const ACRONYM_NICHES = new Set(["adu"]);
+function nicheLabel(niche: string): string {
+  const key = niche.trim().toLowerCase();
+  return ACRONYM_NICHES.has(key) ? key.toUpperCase() : titleCase(niche);
+}
+
 function locationLabel(lead: { zip: string; city: string | null; state: string | null }): string {
   return lead.city ? `${lead.city}${lead.state ? `, ${lead.state}` : ""} ${lead.zip}` : lead.zip;
 }
@@ -52,15 +58,17 @@ function polish(s: string): string {
 
 function buildFullMessage(lead: LeadInfo) {
   return [
-    `Lead Unlocked — ${titleCase(lead.niche)} (${locationLabel(lead)})`,
-    lead.jobType ? `Type: ${lead.jobType}` : null,
+    "OK! Here's the full info for this one —",
     "",
+    `Service Area: ${locationLabel(lead)}`,
+    `Service Type: ${nicheLabel(lead.niche)}${lead.jobType ? ` - ${lead.jobType}` : ""}`,
     `Name: ${lead.name}`,
     `Phone: ${lead.phone}`,
     lead.email ? `Email: ${lead.email}` : null,
     `Address: ${lead.address}`,
-    "",
     `Details: ${polish(lead.jobDetails)}`,
+    "",
+    "Good luck! Let me know if you have any questions. And we will let you know next time a lead comes in.",
   ]
     .filter((line) => line !== null)
     .join("\n");
@@ -72,7 +80,7 @@ function buildFreeTeaser(
   freeLeadsLimit: number
 ) {
   return [
-    `Hey, it's Krystelle! We have a new ${titleCase(lead.niche)} lead that looks like it fits your service area —`,
+    `Hey, it's Krystelle! We have a new ${nicheLabel(lead.niche)} lead that looks like it fits your service area —`,
     "",
     `Service Area: ${locationLabel(lead)}`,
     lead.jobType ? `Service Type: ${lead.jobType}` : null,
@@ -91,7 +99,7 @@ function buildPaymentPrompt(
   paymentUrl: string
 ) {
   return [
-    `Hey, it's Krystelle! We have a new ${titleCase(lead.niche)} lead that looks like it fits your service area —`,
+    `Hey, it's Krystelle! We have a new ${nicheLabel(lead.niche)} lead that looks like it fits your service area —`,
     "",
     `Service Area: ${locationLabel(lead)}`,
     lead.jobType ? `Service Type: ${lead.jobType}` : null,
@@ -165,10 +173,10 @@ async function sendTeamEmail(subject: string, html: string): Promise<void> {
 }
 
 export async function sendLeadDistributedEmail(lead: LeadInfo, contractors: { name: string }[]): Promise<void> {
-  const subject = `Lead Distributed — ${titleCase(lead.niche)} (${locationLabel(lead)}) — ${contractors.length} contractor${contractors.length === 1 ? "" : "s"}`;
+  const subject = `Lead Distributed — ${nicheLabel(lead.niche)} (${locationLabel(lead)}) — ${contractors.length} contractor${contractors.length === 1 ? "" : "s"}`;
   const html = [
     `<p>A new lead just went out to ${contractors.length} contractor${contractors.length === 1 ? "" : "s"} already in the system.</p>`,
-    `<p><strong>${titleCase(lead.niche)}${lead.jobType ? ` — ${lead.jobType}` : ""} (${locationLabel(lead)})</strong></p>`,
+    `<p><strong>${nicheLabel(lead.niche)}${lead.jobType ? ` — ${lead.jobType}` : ""} (${locationLabel(lead)})</strong></p>`,
     `<p>Name: ${lead.name}<br>Phone: ${lead.phone}${lead.email ? `<br>Email: ${lead.email}` : ""}<br>Address: ${lead.address}</p>`,
     `<p>${polish(lead.jobDetails)}</p>`,
     contractors.length > 0
@@ -189,10 +197,10 @@ export async function sendReplyReceivedEmail(params: { fromPhone: string; body: 
 }
 
 export async function sendPaymentReceivedEmail(lead: LeadInfo, contractor: { name: string }, priceCents: number): Promise<void> {
-  const subject = `Payment Received — ${titleCase(lead.niche)} (${locationLabel(lead)}) — $${(priceCents / 100).toFixed(0)}`;
+  const subject = `Payment Received — ${nicheLabel(lead.niche)} (${locationLabel(lead)}) — $${(priceCents / 100).toFixed(0)}`;
   const html = [
     `<p><strong>${contractor.name}</strong> just paid $${(priceCents / 100).toFixed(0)} for a lead.</p>`,
-    `<p>${titleCase(lead.niche)}${lead.jobType ? ` — ${lead.jobType}` : ""} (${locationLabel(lead)})</p>`,
+    `<p>${nicheLabel(lead.niche)}${lead.jobType ? ` — ${lead.jobType}` : ""} (${locationLabel(lead)})</p>`,
     `<p>Lead: ${lead.name} — ${lead.phone}</p>`,
   ].join("");
   return sendTeamEmail(subject, html);

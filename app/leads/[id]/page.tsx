@@ -3,6 +3,12 @@ import { notFound } from "next/navigation";
 import ClaimList from "@/components/ClaimList";
 import CopyBlock from "@/components/CopyBlock";
 
+const ACRONYM_NICHES = new Set(["adu"]);
+function nicheLabel(niche: string): string {
+  const key = niche.trim().toLowerCase();
+  return ACRONYM_NICHES.has(key) ? key.toUpperCase() : niche.charAt(0).toUpperCase() + niche.slice(1);
+}
+
 export default async function LeadDetailPage({ params }: { params: { id: string } }) {
   const lead = await db.lead.findUnique({
     where: { id: params.id },
@@ -11,10 +17,36 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
   if (!lead) notFound();
 
   const firstName = lead.name.split(" ")[0];
-  const niceType = lead.jobType ? `${lead.jobType} — ` : "";
+  const niche = nicheLabel(lead.niche);
   const locationLabel = lead.city ? `${lead.city}${lead.state ? `, ${lead.state}` : ""} ${lead.zip}` : lead.zip;
-  const teaserText = `New ${lead.niche} lead near ${locationLabel}.\n${niceType}${lead.jobDetails}\nInterested? Reply YES and I'll send the full details.`;
-  const fullText = `${lead.name}\n${lead.phone}${lead.email ? `\n${lead.email}` : ""}\n${lead.address}\n\n${niceType}${lead.jobDetails}`;
+
+  const teaserText = [
+    `Hey, it's Krystelle! We have a new ${niche} lead that looks like it fits your service area —`,
+    "",
+    `Service Area: ${locationLabel}`,
+    lead.jobType ? `Service Type: ${lead.jobType}` : null,
+    `Job Details: ${lead.jobDetails}`,
+    "",
+    "Interested? Just let me know and I'll send you the full details.",
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+
+  const fullText = [
+    "OK! Here's the full info for this one —",
+    "",
+    `Service Area: ${locationLabel}`,
+    `Service Type: ${niche}${lead.jobType ? ` - ${lead.jobType}` : ""}`,
+    `Name: ${lead.name}`,
+    `Phone: ${lead.phone}`,
+    lead.email ? `Email: ${lead.email}` : null,
+    `Address: ${lead.address}`,
+    `Details: ${lead.jobDetails}`,
+    "",
+    "Good luck! Let me know if you have any questions. And we will let you know next time a lead comes in.",
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
 
   return (
     <div className="max-w-2xl">

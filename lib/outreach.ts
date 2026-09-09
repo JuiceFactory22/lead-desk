@@ -22,7 +22,13 @@ export async function triggerClaimOutreach(claimId: string) {
     if (!from) throw new Error("GHL_SENDING_NUMBER is not set");
 
     if (freeRemaining > 0) {
-      const { messageId } = await sendFreeTeaserViaGHL(claim.contractor, claim.lead, freeRemaining, from);
+      const { messageId } = await sendFreeTeaserViaGHL(
+        claim.contractor,
+        claim.lead,
+        freeRemaining,
+        claim.contractor.freeLeadsLimit,
+        from
+      );
       return db.claim.update({
         where: { id: claim.id },
         data: { smsSid: messageId, sentFromNumber: from, deliveryError: null },

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCategories } from "@/lib/useCategories";
 import { useRole } from "@/lib/useRole";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 export default function NewLeadPage() {
   const router = useRouter();
@@ -87,7 +88,11 @@ export default function NewLeadPage() {
 
         <div>
           <label className="label">Address</label>
-          <input className="input" required value={form.address} onChange={(e) => update("address", e.target.value)} />
+          <AddressAutocomplete
+            value={form.address}
+            onChange={(v) => update("address", v)}
+            onZipFound={(zip) => update("zip", zip)}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4">

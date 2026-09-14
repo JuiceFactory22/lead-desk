@@ -23,11 +23,14 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
   const teaserText = [
     `Hey, it's Krystelle! We have a new ${niche} lead that looks like it fits your service area —`,
     "",
+    `Name: `,
+    `Phone: `,
+    `Address: `,
     `Service Area: ${locationLabel}`,
     lead.jobType ? `Service Type: ${lead.jobType}` : null,
     `Job Details: ${lead.jobDetails}`,
     "",
-    "Interested? Just let me know and I'll send you the full details.",
+    "Message us to unlock the full contact details — or pass if it's not a good fit. Thanks!",
   ]
     .filter((line) => line !== null)
     .join("\n");

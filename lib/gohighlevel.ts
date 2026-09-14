@@ -82,13 +82,16 @@ function buildFreeTeaser(
   return [
     `Hey, it's Krystelle! We have a new ${nicheLabel(lead.niche)} lead that looks like it fits your service area —`,
     "",
+    `Name: `,
+    `Phone: `,
+    `Address: `,
     `Service Area: ${locationLabel(lead)}`,
     lead.jobType ? `Service Type: ${lead.jobType}` : null,
     `Job Details: ${polish(lead.jobDetails)}`,
     "",
     `Just a reminder — we give you ${freeLeadsLimit} free lead${freeLeadsLimit === 1 ? "" : "s"} to start. You have ${freeRemaining} FREE lead${freeRemaining === 1 ? "" : "s"} left.`,
     "",
-    `Just let me know if you want to redeem a free lead and I'll send all the details. Or you can pass and wait for something that's a better fit for you. Thanks!`,
+    `Message us to unlock the full contact details — or pass if it's not a good fit. Thanks!`,
   ]
     .filter((line) => line !== null)
     .join("\n");
@@ -101,6 +104,9 @@ function buildPaymentPrompt(
   return [
     `Hey, it's Krystelle! We have a new ${nicheLabel(lead.niche)} lead that looks like it fits your service area —`,
     "",
+    `Name: `,
+    `Phone: `,
+    `Address: `,
     `Service Area: ${locationLabel(lead)}`,
     lead.jobType ? `Service Type: ${lead.jobType}` : null,
     `Job Details: ${polish(lead.jobDetails)}`,

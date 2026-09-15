@@ -2,22 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { unlockFreeLead } from "@/lib/outreach";
 import { sendReplyReceivedEmail } from "@/lib/gohighlevel";
+import { detectIntent } from "@/lib/intent";
 
 function normalizePhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   return digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
-}
-
-const REDEEM_EXACT = ["yes", "y", "sure", "ok", "okay", "yeah", "yep", "redeem"];
-const REDEEM_PHRASES = ["send it", "i want it", "want it", "sounds good", "i'll take it", "ill take it"];
-const DECLINE_EXACT = ["no", "pass", "skip", "nah"];
-const DECLINE_PHRASES = ["no thanks", "not for me", "not interested", "i'll pass", "ill pass"];
-
-function detectIntent(body: string): "redeem" | "decline" | null {
-  const normalized = body.trim().toLowerCase().replace(/[.!?]+$/, "");
-  if (REDEEM_EXACT.includes(normalized) || REDEEM_PHRASES.some((p) => normalized.includes(p))) return "redeem";
-  if (DECLINE_EXACT.includes(normalized) || DECLINE_PHRASES.some((p) => normalized.includes(p))) return "decline";
-  return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -42,8 +31,8 @@ export async function POST(req: NextRequest) {
     console.error("Failed to send reply notification email:", err);
   }
 
-  const intent = detectIntent(body);
-  if (!intent) {
+  const intent = await detectIntent(body);
+  if (intent === "unclear") {
     return NextResponse.json({ ok: true, skipped: "no clear intent" });
   }
 
